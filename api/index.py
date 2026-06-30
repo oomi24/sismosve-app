@@ -39,6 +39,15 @@ async def home():
         "status": "online",
         "message": "SismosVE API funcionando en Vercel"
     }
+from fastapi.responses import HTMLResponse
+from pathlib import Path
 
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    """Sirve el frontend index.html"""
+    index_path = Path(__file__).parent.parent / "index.html"
+    if index_path.exists():
+        return index_path.read_text()
+    return "<h1>Error: index.html no encontrado</h1>"
 # Handler para Vercel
 handler = Mangum(app)
