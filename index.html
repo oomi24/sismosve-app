@@ -8,12 +8,12 @@
     <!-- Leaflet CSS para el mapa -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Estilos personalizados -->
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
         }
         
         body {
@@ -55,7 +55,6 @@
             margin-top: 2px;
         }
 
-        /* Botón de ayuda en el header */
         #helpBtn {
             position: absolute;
             right: 15px;
@@ -116,12 +115,13 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border: 2px solid white;
+            touch-action: pan-y;
         }
         
         /* ===== PANEL DE AYUDA ===== */
         #helpPanel {
             display: none;
-            padding: 20px;
+            padding: 15px;
             background: white;
             margin: 0 15px 15px 15px;
             border-radius: 12px;
@@ -156,22 +156,29 @@
         
         .tab-buttons {
             display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 6px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 10px 0;
+            z-index: 10;
+            border-bottom: 1px solid #eee;
         }
         .tab-btn {
             flex: 1;
-            padding: 10px 15px;
+            padding: 10px 12px;
             border: none;
             border-radius: 8px;
             background: #e0e0e0;
             color: #333;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             transition: all 0.3s;
-            min-width: 70px;
+            min-width: 60px;
+            text-align: center;
         }
         .tab-btn.active {
             background: #e94560;
@@ -199,38 +206,32 @@
         
         .emergency-card {
             background: #f8f9fa;
-            padding: 12px;
+            padding: 10px 12px;
             border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             border-left: 4px solid #e94560;
         }
-        .emergency-card.orange {
-            border-left-color: #f5a623;
-        }
-        .emergency-card.blue {
-            border-left-color: #2196F3;
-        }
-        .emergency-card.green {
-            border-left-color: #4CAF50;
-        }
-        
         .emergency-card a {
             color: #e94560;
             text-decoration: none;
-            font-size: 18px;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 15px;
         }
         .emergency-card a:hover {
             text-decoration: underline;
         }
+        .emergency-card .sub {
+            font-size: 12px;
+            color: #666;
+        }
         
         .help-image {
             text-align: center;
-            margin: 15px 0;
+            margin: 10px 0;
         }
         .help-image img {
             max-width: 100%;
-            max-height: 200px;
+            max-height: 150px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
@@ -241,9 +242,10 @@
         }
         
         .info-box {
-            padding: 12px;
+            padding: 10px 12px;
             border-radius: 8px;
             margin-top: 10px;
+            font-size: 13px;
         }
         .info-box.blue {
             background: #f0f7ff;
@@ -258,7 +260,6 @@
             border-left: 4px solid #4CAF50;
         }
         
-        /* Tabla de contactos */
         .contact-table {
             width: 100%;
             font-size: 13px;
@@ -280,85 +281,108 @@
             text-decoration: underline;
         }
         
-        /* Sección de sismos */
-        .section-title {
-            padding: 0 15px 10px 15px;
-            font-size: 18px;
+        /* ===== HISTORIAL DESPLEGABLE ===== */
+        .historial-container {
+            margin: 0 15px 15px 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .historial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            cursor: pointer;
+            background: white;
+            transition: background 0.2s;
+            user-select: none;
+        }
+        .historial-header:active {
+            background: #f5f5f5;
+        }
+        .historial-header h3 {
+            font-size: 16px;
             font-weight: 600;
             color: #1a1a2e;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-        }
-        
-        .section-title .count {
-            font-size: 14px;
-            font-weight: 400;
-            color: #666;
-        }
-        
-        .sismos-list {
-            padding: 0 15px 15px 15px;
-            display: flex;
-            flex-direction: column;
             gap: 8px;
         }
+        .historial-header .count-badge {
+            background: #e94560;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .historial-header .arrow {
+            font-size: 18px;
+            transition: transform 0.3s;
+            color: #888;
+        }
+        .historial-header .arrow.open {
+            transform: rotate(180deg);
+        }
         
-        .sismo-item {
-            background: white;
-            border-radius: 10px;
-            padding: 14px 16px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        .historial-body {
+            max-height: 0;
+            overflow-y: auto;
+            transition: max-height 0.4s ease;
+        }
+        .historial-body.open {
+            max-height: 400px;
+        }
+        
+        .historial-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
-            border-left: 4px solid #e94560;
+            padding: 10px 18px;
+            border-top: 1px solid #f0f0f0;
             cursor: pointer;
+            transition: background 0.2s;
         }
-        
-        .sismo-item:hover {
-            transform: translateX(4px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .historial-item:hover {
+            background: #f8f9fa;
         }
-        
-        .sismo-item .info {
+        .historial-item:active {
+            background: #f0f0f0;
+        }
+        .historial-item .info {
             flex: 1;
         }
-        
-        .sismo-item .magnitud {
-            font-size: 22px;
+        .historial-item .magnitud {
+            font-size: 18px;
             font-weight: 700;
             color: #e94560;
-            min-width: 50px;
+            min-width: 45px;
             text-align: right;
         }
-        
-        .sismo-item .ubicacion {
-            font-size: 15px;
+        .historial-item .ubicacion {
+            font-size: 14px;
             font-weight: 500;
             color: #1a1a2e;
         }
-        
-        .sismo-item .detalle {
-            font-size: 12px;
-            color: #888;
-            margin-top: 2px;
-        }
-        
-        /* Badge de magnitud */
-        .badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 20px;
+        .historial-item .detalle {
             font-size: 11px;
+            color: #888;
+        }
+        .historial-item .badge-mini {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 12px;
+            font-size: 10px;
             font-weight: 600;
             color: white;
+            margin-left: 6px;
         }
-        
-        .badge.menor { background: #4CAF50; }
-        .badge.media { background: #FFC107; color: #333; }
-        .badge.alta { background: #FF5722; }
+        .badge-mini.bajo { background: #4CAF50; }
+        .badge-mini.medio { background: #FFC107; color: #333; }
+        .badge-mini.alto { background: #FF5722; }
         
         /* Botón actualizar */
         .refresh-btn {
@@ -380,11 +404,9 @@
             align-items: center;
             gap: 8px;
         }
-        
         .refresh-btn:active {
             transform: scale(0.95);
         }
-        
         .refresh-btn .spinner {
             display: none;
             width: 18px;
@@ -394,27 +416,22 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         .refresh-btn.loading .spinner {
             display: inline-block;
         }
-        
         .refresh-btn.loading .text {
             display: none;
         }
         
-        /* Estado de carga */
         .loading-state {
             text-align: center;
             padding: 30px;
             color: #888;
         }
-        
         .loading-state .spinner-big {
             width: 40px;
             height: 40px;
@@ -436,8 +453,6 @@
             }
             .stat-card .number { font-size: 20px; }
             #map { height: 250px; }
-            .sismo-item { padding: 12px 14px; }
-            .sismo-item .magnitud { font-size: 18px; min-width: 40px; }
             .refresh-btn { 
                 bottom: 15px;
                 right: 15px;
@@ -446,52 +461,46 @@
             }
             #helpPanel {
                 margin: 0 10px 10px 10px;
-                padding: 15px;
+                padding: 12px;
                 max-height: 500px;
             }
             .tab-btn {
-                font-size: 11px;
-                padding: 8px 10px;
+                font-size: 10px;
+                padding: 8px 6px;
+                min-width: 50px;
             }
-            .emergency-card a {
-                font-size: 16px;
-            }
+            .historial-item { padding: 8px 14px; }
+            .historial-item .magnitud { font-size: 16px; min-width: 35px; }
+            .historial-item .ubicacion { font-size: 13px; }
+            .historial-header { padding: 12px 14px; }
+            .historial-header h3 { font-size: 14px; }
         }
         
         @media (max-width: 400px) {
             .stats-container { grid-template-columns: repeat(2, 1fr); }
             .stat-card .number { font-size: 17px; }
             .stat-card .label { font-size: 10px; }
-            #helpPanel {
-                padding: 12px;
-                max-height: 450px;
-            }
-            .tab-btn {
-                font-size: 10px;
-                padding: 6px 8px;
-            }
-            .help-image img {
-                max-height: 150px;
-            }
+            #helpPanel { padding: 10px; max-height: 450px; }
+            .tab-btn { font-size: 9px; padding: 6px 4px; min-width: 40px; }
+            .help-image img { max-height: 120px; }
+            .historial-body.open { max-height: 300px; }
         }
         
         /* Modo oscuro */
         @media (prefers-color-scheme: dark) {
             body { background: #0d0d1a; color: #eee; }
-            .sismo-item { background: #1a1a2e; }
-            .sismo-item .ubicacion { color: #eee; }
             .stats-container { background: #1a1a2e; }
             .stat-card .label { color: #aaa; }
-            .section-title { color: #eee; }
-            .section-title .count { color: #aaa; }
             .header { background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%); }
             #helpPanel { background: #1a1a2e; }
             #helpPanel .panel-header h3 { color: #eee; }
             .tab-content { color: #ddd; }
             .tab-btn { background: #333; color: #ddd; }
             .tab-btn.active { background: #e94560; color: white; }
+            .tab-buttons { background: #1a1a2e; border-bottom-color: #333; }
             .emergency-card { background: #222; }
             .emergency-card a { color: #ff6b81; }
+            .emergency-card .sub { color: #aaa; }
             .contact-table td { border-bottom-color: #333; }
             .info-box.blue { background: #1a2a3a; border-left-color: #2196F3; }
             .info-box.orange { background: #2a1a0a; border-left-color: #ff9800; }
@@ -499,6 +508,12 @@
             .help-image .caption { color: #888; }
             #helpPanel .panel-header .close-btn { color: #aaa; }
             #helpPanel .panel-header .close-btn:hover { color: #fff; }
+            .historial-container { background: #1a1a2e; }
+            .historial-header { background: #1a1a2e; }
+            .historial-header h3 { color: #eee; }
+            .historial-item { border-top-color: #333; }
+            .historial-item:hover { background: #222; }
+            .historial-item .ubicacion { color: #eee; }
         }
     </style>
 </head>
@@ -508,7 +523,6 @@
         <h1>🌋 SismosVE</h1>
         <p>Monitoreo Sísmico de Venezuela</p>
         <div class="update-time" id="updateTime">Actualizando...</div>
-        <!-- Botón de ayuda -->
         <button id="helpBtn" onclick="toggleHelp()">📋</button>
     </div>
 
@@ -542,7 +556,6 @@
             <button class="close-btn" onclick="toggleHelp()">✕</button>
         </div>
 
-        <!-- Pestañas -->
         <div class="tab-buttons" id="tabButtons">
             <button class="tab-btn active" onclick="showTab('kit')">🎒 Mochila</button>
             <button class="tab-btn" onclick="showTab('contactos')">📞 Contactos</button>
@@ -556,7 +569,9 @@
             <h4>🎒 Mochila de Auxilio (72 horas)</h4>
             
             <div class="help-image">
-                <img src="/images/mochila-emergencia.png" alt="Mochila de Auxilio" onerror="this.style.display='none'">
+                <img src="https://cdn.pixabay.com/photo/2017/10/20/22/55/survival-2870734_640.jpg" 
+                     alt="Mochila de Auxilio" 
+                     style="max-width:100%; max-height:150px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 <p class="caption">¿Qué debe tener tu mochila de emergencia?</p>
             </div>
             
@@ -577,31 +592,31 @@
             </div>
         </div>
 
-        <!-- ===== PESTAÑA: CONTACTOS ===== -->
+        <!-- ===== PESTAÑA: CONTACTOS REALES ===== -->
         <div id="tab-contactos" class="tab-content" style="display:none;">
-            <h4>📞 Directorio de Emergencia</h4>
-            
-            <div class="help-image">
-                <img src="/images/directorio-emergencia.png" alt="Directorio de emergencia" onerror="this.style.display='none'">
-            </div>
+            <h4>📞 Contactos de Emergencia</h4>
             
             <div class="emergency-card">
-                <strong>🆘 Reportar Desaparecidos:</strong><br>
-                <a href="tel:08007372282">0800-RESCATE (0800-7372282)</a>
+                <strong>🆘 Emergencias Nacionales</strong><br>
+                <a href="tel:171">171</a>
+                <div class="sub">Línea única de emergencias</div>
             </div>
             
-            <div class="emergency-card orange">
-                <strong>📱 Aplicación VenApp:</strong><br>
-                <span style="font-size:14px;">Reporta desaparecidos y coordina ayuda</span>
+            <div class="emergency-card" style="border-left-color: #2196F3;">
+                <strong>🏥 Ministerio de Salud</strong><br>
+                <a href="tel:080072583">0800-SALUD (72583)</a>
             </div>
             
-            <table class="contact-table">
-                <tr><td><strong>Protección Civil</strong></td><td><a href="tel:Ven911">Ven911</a></td></tr>
-                <tr><td><strong>Emergencias Médicas</strong></td><td><a href="tel:08007258392">0800-SALUDYA</a></td></tr>
-                <tr><td><strong>Ambulancias</strong></td><td><a href="tel:08002628526">0800-AMBULANCIA</a></td></tr>
-                <tr><td><strong>Protección de Niños</strong></td><td><a href="tel:08003264542">0800-FAMILIA</a></td></tr>
-                <tr><td><strong>Atención a la Mujer</strong></td><td><a href="tel:08006853737">0800-MUJERES</a></td></tr>
-            </table>
+            <div class="emergency-card" style="border-left-color: #FF9800;">
+                <strong>🛡️ Protección Civil Nacional</strong><br>
+                <a href="tel:0800724845">0800-PCIVIL (724845)</a>
+            </div>
+            
+            <div class="emergency-card" style="border-left-color: #4CAF50;">
+                <strong>⛑️ Cruz Roja Venezolana</strong><br>
+                <a href="https://cruzroja.ve" target="_blank">cruzroja.ve</a>
+                <div class="sub">Asistencia humanitaria</div>
+            </div>
             
             <div class="info-box blue">
                 <strong>📌 Guarda estos números en tu teléfono.</strong>
@@ -613,7 +628,9 @@
             <h4>🔔 Activar Alertas de Terremoto</h4>
             
             <div class="help-image">
-                <img src="/images/alertas-android.png" alt="Activar Alertas en Android" onerror="this.style.display='none'">
+                <img src="https://cdn.pixabay.com/photo/2016/03/27/19/43/android-1283519_640.jpg" 
+                     alt="Activar Alertas en Android" 
+                     style="max-width:100%; max-height:150px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 <p class="caption">Configuración paso a paso en tu Android</p>
             </div>
             
@@ -629,126 +646,68 @@
                 <strong>💡 ¿No te llegó la alerta?</strong><br>
                 <span style="font-size:13px;">Asegúrate de tener activada la ubicación y que tu teléfono sea compatible con Android 9+.</span>
             </div>
-            
-            <div class="info-box orange" style="margin-top:10px;">
-                <strong>⚠️ ¿Por qué no sonó?</strong><br>
-                <span style="font-size:13px;">La alerta solo se activa para sismos de magnitud 4.5+ y cuando el sistema detecta movimiento.</span>
-            </div>
         </div>
 
-        <!-- ===== PESTAÑA: FAMILIARES ===== -->
+        <!-- ===== PESTAÑA: FAMILIARES (NUEVOS ENLACES) ===== -->
         <div id="tab-familiares" class="tab-content" style="display:none;">
-            <h4>👨‍👩‍👧 Enlaces de Búsqueda de Familiares</h4>
+            <h4>👨‍👩‍👧 Encuentra a tus Familiares</h4>
             
             <div class="help-image">
-                <img src="/images/busqueda-familiares.png" alt="Buscar familiares" onerror="this.style.display='none'">
-                <p class="caption">Recursos para encontrar a tus seres queridos</p>
+                <img src="https://cdn.pixabay.com/photo/2016/03/31/19/50/family-1295140_640.png" 
+                     alt="Buscar familiares" 
+                     style="max-width:100%; max-height:150px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                <p class="caption">Recursos oficiales para encontrar a tus seres queridos</p>
             </div>
-            
-            <p>Si estás buscando a un familiar, utiliza estos recursos:</p>
-            
-            <div class="emergency-card">
-                <strong>📱 Línea gratuita:</strong><br>
-                <a href="tel:08007372282">0800-RESCATE (0800-7372282)</a>
+
+            <div style="background: #f0f7ff; padding: 10px 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin-bottom: 12px;">
+                <strong style="font-size:13px;">📌 Plataformas de Búsqueda de Pacientes:</strong>
             </div>
-            
-            <ul>
-                <li><strong>📱 Aplicación:</strong> <a href="#" style="color:#e94560;">VenApp</a> (Reporta desaparecidos)</li>
-                <li><strong>🆘 Cruz Roja:</strong> <a href="https://www.cruzroja.org.ve" target="_blank" style="color:#e94560;">https://www.cruzroja.org.ve</a></li>
-                <li><strong>🌐 Google Person Finder:</strong> <a href="https://personfinder.google.com" target="_blank" style="color:#e94560;">https://personfinder.google.com</a></li>
-            </ul>
-            
+
+            <div class="emergency-card" style="border-left-color: #2196F3;">
+                <strong>🏥 Centro Nacional de Localización</strong><br>
+                <a href="https://localizapacientes.com" target="_blank">localizapacientes.com</a>
+                <div class="sub">4.658 pacientes registrados en 21 hospitales</div>
+            </div>
+
+            <div class="emergency-card" style="border-left-color: #4CAF50;">
+                <strong>🏥 Hospitales en Venezuela (Comunitaria)</strong><br>
+                <a href="https://hospitalesenvenezuela.com" target="_blank">hospitalesenvenezuela.com</a>
+                <div class="sub">31.603 personas registradas por 219 voluntarios</div>
+            </div>
+
+            <div class="emergency-card" style="border-left-color: #FF9800;">
+                <strong>🏥 Portal de Pacientes CCS</strong><br>
+                <a href="https://ingresadosccs.jbsmartsolutions.com" target="_blank">ingresadosccs.jbsmartsolutions.com</a>
+                <div class="sub">Registros ingresados por personal médico</div>
+            </div>
+
+            <div style="background: #fff3e0; padding: 10px 12px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 12px 0;">
+                <strong style="font-size:13px;">🤖 Canales de Búsqueda Rápida:</strong>
+            </div>
+
+            <div class="emergency-card" style="border-left-color: #0088cc;">
+                <strong>📱 Telegram: @EncuentralosBot</strong><br>
+                <a href="https://t.me/EncuentralosBot" target="_blank">t.me/EncuentralosBot</a>
+            </div>
+
+            <div class="emergency-card" style="border-left-color: #25D366;">
+                <strong>📱 WhatsApp Ayuda Humanitaria</strong><br>
+                <a href="https://api.whatsapp.com/send/?phone=541173713911&text&type=phone_number&app_absent=0" target="_blank">Enviar mensaje</a>
+            </div>
+
             <div class="info-box orange">
-                <strong>⚠️ Importante:</strong> Ten a mano el nombre completo, cédula y última ubicación conocida de la persona que buscas.
+                <strong>⚠️ Importante:</strong> Ten a mano el nombre completo, cédula y última ubicación conocida.
             </div>
         </div>
-
-            <!-- ===== PESTAÑA: FAMILIARES ===== -->
-<div id="tab-familiares" class="tab-content" style="display:none;">
-    <h4>👨‍👩‍👧 Encuentra a tus Familiares</h4>
-    
-    <div class="help-image">
-        <img src="https://cdn.pixabay.com/photo/2016/03/31/19/50/family-1295140_640.png" 
-             alt="Buscar familiares" 
-             style="max-width:100%; max-height:200px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-        <p class="caption">Recursos oficiales y comunitarios para encontrar a tus seres queridos</p>
-    </div>
-
-    <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3; margin-bottom: 15px;">
-        <strong>📌 Plataformas de Búsqueda de Pacientes Hospitalizados:</strong>
-    </div>
-
-    <!-- Centro Nacional de Localización de Personas -->
-    <div class="emergency-card" style="border-left-color: #2196F3;">
-        <strong>🏥 Centro Nacional de Localización de Personas</strong><br>
-        <span style="font-size:14px;">Sistema oficial con 4.658 pacientes registrados en 21 hospitales</span><br>
-        <a href="https://localizapacientes.com" target="_blank" style="font-size:16px;">🔗 localizapacientes.com</a>
-    </div>
-
-    <!-- Hospitales en Venezuela -->
-    <div class="emergency-card" style="border-left-color: #4CAF50;">
-        <strong>🏥 Hospitales en Venezuela (App Comunitaria)</strong><br>
-        <span style="font-size:14px;">31.603 personas registradas por 219 voluntarios activos</span><br>
-        <a href="https://hospitalesenvenezuela.com" target="_blank" style="font-size:16px;">🔗 hospitalesenvenezuela.com</a>
-    </div>
-
-    <!-- Portal de Pacientes CCS -->
-    <div class="emergency-card" style="border-left-color: #FF9800;">
-        <strong>🏥 Portal de Pacientes - Emergencia Venezuela 2026</strong><br>
-        <span style="font-size:14px;">Registros ingresados directamente por personal médico</span><br>
-        <a href="https://ingresadosccs.jbsmartsolutions.com" target="_blank" style="font-size:16px;">🔗 ingresadosccs.jbsmartsolutions.com</a>
-    </div>
-
-    <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 15px 0;">
-        <strong>🤖 Canales de Búsqueda Rápida:</strong>
-    </div>
-
-    <!-- Bot de Telegram -->
-    <div class="emergency-card" style="border-left-color: #0088cc;">
-        <strong>📱 Bot de Telegram: @EncuentralosBot</strong><br>
-        <span style="font-size:14px;">Busca y reporta personas desaparecidas</span><br>
-        <a href="https://t.me/EncuentralosBot" target="_blank" style="font-size:16px;">🔗 t.me/EncuentralosBot</a>
-    </div>
-
-    <!-- WhatsApp -->
-    <div class="emergency-card" style="border-left-color: #25D366;">
-        <strong>📱 WhatsApp Ayuda Humanitaria</strong><br>
-        <span style="font-size:14px;">Contacto internacional para emergencias</span><br>
-        <a href="https://api.whatsapp.com/send/?phone=541173713911&text&type=phone_number&app_absent=0" target="_blank" style="font-size:16px;">🔗 Enviar mensaje por WhatsApp</a>
-    </div>
-
-    <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 15px 0;">
-        <strong>🆘 Cruz Roja Venezolana:</strong>
-    </div>
-
-    <!-- Cruz Roja -->
-    <div class="emergency-card" style="border-left-color: #e94560;">
-        <strong>⛑️ Cruz Roja Venezolana</strong><br>
-        <span style="font-size:14px;">Asistencia y protección a personas afectadas</span><br>
-        <a href="https://cruzroja.ve" target="_blank" style="font-size:16px;">🔗 cruzroja.ve</a>
-    </div>
-
-    <!-- Teléfonos oficiales -->
-    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #e94560;">
-        <strong>📞 Teléfonos Oficiales de Emergencia:</strong>
-        <ul style="list-style: none; padding-left: 0; margin-top: 10px;">
-            <li>🆘 <strong>Línea única de emergencias:</strong> <a href="tel:171" style="color:#e94560; font-weight:bold;">171</a></li>
-            <li>🏥 <strong>Ministerio de Salud:</strong> <a href="tel:080072583" style="color:#e94560; font-weight:bold;">0800-SALUD (72583)</a></li>
-            <li>🛡️ <strong>Protección Civil Nacional:</strong> <a href="tel:0800724845" style="color:#e94560; font-weight:bold;">0800-PCIVIL (724845)</a></li>
-        </ul>
-    </div>
-
-    <div class="info-box orange" style="margin-top:15px;">
-        <strong>⚠️ Importante:</strong> Ten a mano el nombre completo, cédula y última ubicación conocida de la persona que buscas.
-    </div>
-</div>
 
         <!-- ===== PESTAÑA: EDUCACIÓN ===== -->
         <div id="tab-educacion" class="tab-content" style="display:none;">
             <h4>📘 Educación Sísmica</h4>
             
             <div class="help-image">
-                <img src="/images/agacharse-cubrirse.png" alt="Agacharse, Cubrirse, Agarrarse" onerror="this.style.display='none'">
+                <img src="https://cdn.pixabay.com/photo/2016/03/31/15/06/earthquake-1294015_640.png" 
+                     alt="Agacharse, Cubrirse, Agarrarse" 
+                     style="max-width:100%; max-height:150px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
                 <p class="caption">Los 3 pasos para protegerte durante un sismo</p>
             </div>
             
@@ -771,7 +730,7 @@
             <ul>
                 <li>Revisa si hay heridos y brinda primeros auxilios</li>
                 <li>Corta el gas y la electricidad si hay daños</li>
-                <li>Alejate de ventanas y edificios dañados</li>
+                <li>Aléjate de ventanas y edificios dañados</li>
                 <li>Usa los contactos de emergencia</li>
             </ul>
             
@@ -781,15 +740,21 @@
         </div>
     </div>
 
-    <!-- ===== LISTA DE SISMOS ===== -->
-    <div class="section-title">
-        <span>📋 Sismos Registrados</span>
-        <span class="count" id="sismosCount">0</span>
-    </div>
-    <div class="sismos-list" id="sismosList">
-        <div class="loading-state">
-            <div class="spinner-big"></div>
-            <p>Cargando datos sísmicos...</p>
+    <!-- ===== HISTORIAL DE SISMOS (DESPLEGABLE) ===== -->
+    <div class="historial-container">
+        <div class="historial-header" onclick="toggleHistorial()">
+            <h3>
+                📋 Historial de Sismos
+                <span class="count-badge" id="historialCount">0</span>
+            </h3>
+            <span class="arrow" id="historialArrow">▼</span>
+        </div>
+        <div class="historial-body" id="historialBody">
+            <div id="historialList">
+                <div class="loading-state" style="padding:15px;">
+                    <p>Cargando sismos...</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -799,7 +764,7 @@
         <span class="text">🔄 Actualizar</span>
     </button>
 
-    <!-- ===== LEAFTET JS ===== -->
+    <!-- ===== LEAFLET JS ===== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- ===== SCRIPT PRINCIPAL ===== -->
@@ -807,6 +772,7 @@
         let mapa = null;
         let marcadores = [];
         let datosActuales = [];
+        let historialAbierto = false;
 
         // --- Inicializar mapa ---
         function initMap() {
@@ -825,11 +791,16 @@
         }
 
         // --- Badge según magnitud ---
-        function getBadge(magnitud) {
+        function getBadgeClass(magnitud) {
             const val = parseFloat(magnitud);
-            if (val < 3.5) return '<span class="badge menor">Bajo</span>';
-            if (val < 5.0) return '<span class="badge media">Medio</span>';
-            return '<span class="badge alta">Alto</span>';
+            if (val < 3.5) return 'bajo';
+            if (val < 5.0) return 'medio';
+            return 'alto';
+        }
+
+        function getBadgeHTML(magnitud) {
+            const cls = getBadgeClass(magnitud);
+            return `<span class="badge-mini ${cls}">${cls.toUpperCase()}</span>`;
         }
 
         // --- Formatear fecha ---
@@ -852,7 +823,21 @@
             }
         }
 
-        // --- Cargar datos desde la API ---
+        // --- Toggle historial ---
+        function toggleHistorial() {
+            historialAbierto = !historialAbierto;
+            const body = document.getElementById('historialBody');
+            const arrow = document.getElementById('historialArrow');
+            if (historialAbierto) {
+                body.classList.add('open');
+                arrow.classList.add('open');
+            } else {
+                body.classList.remove('open');
+                arrow.classList.remove('open');
+            }
+        }
+
+        // --- Cargar datos ---
         async function cargarDatos() {
             const btn = document.getElementById('refreshBtn');
             btn.classList.add('loading');
@@ -868,15 +853,14 @@
                 
                 actualizarStats(dataStats);
                 actualizarMapa(datosActuales);
-                actualizarLista(datosActuales);
+                actualizarHistorial(datosActuales);
                 actualizarHora(dataStats.ultima_actualizacion);
 
             } catch (error) {
                 console.error('Error cargando datos:', error);
-                document.getElementById('sismosList').innerHTML = `
-                    <div style="text-align:center;padding:30px;color:#e94560;">
-                        ❌ Error cargando datos<br>
-                        <small style="color:#888;">${error.message}</small>
+                document.getElementById('historialList').innerHTML = `
+                    <div style="text-align:center;padding:15px;color:#e94560;font-size:13px;">
+                        ❌ Error: ${error.message}
                     </div>
                 `;
             } finally {
@@ -941,14 +925,15 @@
             }
         }
 
-        // --- Actualizar lista ---
-        function actualizarLista(sismos) {
-            const container = document.getElementById('sismosList');
-            document.getElementById('sismosCount').textContent = sismos.length;
+        // --- Actualizar historial desplegable ---
+        function actualizarHistorial(sismos) {
+            const container = document.getElementById('historialList');
+            const count = document.getElementById('historialCount');
+            count.textContent = sismos.length;
 
             if (!sismos || sismos.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align:center;padding:30px;color:#888;">
+                    <div style="text-align:center;padding:15px;color:#888;font-size:13px;">
                         No hay sismos registrados
                     </div>
                 `;
@@ -968,9 +953,11 @@
                 const fecha = formatDate(props.date);
                 const hora = props.time || '';
                 const profundidad = props.depth || '';
+                const lat = props.lat || 0;
+                const lng = props.long || 0;
 
                 return `
-                    <div class="sismo-item" onclick="centrarEnSismo(${props.lat || 0}, ${props.long || 0})">
+                    <div class="historial-item" onclick="centrarEnSismo(${lat}, ${lng})">
                         <div class="info">
                             <div class="ubicacion">${ubicacion}</div>
                             <div class="detalle">
@@ -980,7 +967,7 @@
                         </div>
                         <div style="text-align:right;">
                             <div class="magnitud">${magnitud.toFixed(1)}</div>
-                            ${getBadge(magnitud)}
+                            ${getBadgeHTML(magnitud)}
                         </div>
                     </div>
                 `;
@@ -991,6 +978,10 @@
         function centrarEnSismo(lat, lng) {
             if (mapa && lat && lng) {
                 mapa.setView([parseFloat(lat), parseFloat(lng)], 10);
+                // Cerrar historial después de seleccionar
+                if (historialAbierto) {
+                    toggleHistorial();
+                }
             }
         }
 
@@ -1019,23 +1010,16 @@
         }
 
         function showTab(tabName) {
-            // Ocultar todo
             document.querySelectorAll('.tab-content').forEach(el => {
                 el.style.display = 'none';
             });
-            
-            // Desactivar todos los botones
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
-            // Mostrar el seleccionado
             const content = document.getElementById('tab-' + tabName);
             if (content) {
                 content.style.display = 'block';
             }
-            
-            // Activar el botón
             const buttons = document.querySelectorAll('.tab-btn');
             const index = ['kit', 'contactos', 'alertas', 'familiares', 'educacion'].indexOf(tabName);
             if (index !== -1 && buttons[index]) {
