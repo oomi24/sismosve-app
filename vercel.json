@@ -9,16 +9,5 @@
       "source": "/api/(.*)",
       "destination": "api/index.py"
     }
-  ],
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
-    }
   ]
 }
-
