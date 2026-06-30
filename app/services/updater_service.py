@@ -7,21 +7,21 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-import aiohttp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from ..models.schemas import FunvisisCollection, SismosCollection
 from .sismos_service import SismosService
 
 
 class UpdaterService:
-    """Servicio para actualizar datos de sismos automáticamente"""
+    """
+    Servicio para actualizar datos de sismos automáticamente.
+    Ahora solo recarga los datos desde la API de USGS.
+    """
 
     def __init__(self, sismos_service: SismosService, update_interval: int = 300):
         self.sismos_service = sismos_service
         self.update_interval = update_interval  # segundos
-        self.funvisis_url = "http://www.funvisis.gob.ve/maravilla.json"
         self.scheduler = AsyncIOScheduler()
         self.logger = logging.getLogger(__name__)
         self.is_running = False
@@ -77,26 +77,15 @@ class UpdaterService:
             self.logger.error(f"Error al detener scheduler: {e}")
 
     async def update_sismos_data(self) -> bool:
-        """Actualiza los datos de sismos desde FUNVISIS"""
+        """Actualiza los datos de sismos desde la API de USGS"""
         self.logger.info("Iniciando actualización de datos de sismos...")
         self.update_stats["total_updates"] += 1
 
         try:
-            # Descargar datos de FUNVISIS
-            funvisis_data = await self._download_funvisis_data()
+            # Recargar datos desde USGS
+            sismos_data = self.sismos_service.load_sismos()
 
-            if not funvisis_data:
-                self.logger.error("No se pudieron obtener datos de FUNVISIS")
-                self.update_stats["failed_updates"] += 1
-                return False
-
-            # Transformar datos
-            sismos_data = self.sismos_service.transform_funvisis_to_sismos(
-                funvisis_data
-            )
-
-            # Guardar datos
-            if self.sismos_service.save_sismos(sismos_data):
+            if sismos_data and sismos_data.features:
                 self.update_stats["successful_updates"] += 1
                 self.last_update = datetime.now()
 
@@ -109,7 +98,7 @@ class UpdaterService:
                 )
                 return True
             else:
-                self.logger.error("Error al guardar datos")
+                self.logger.warning("No se obtuvieron datos de sismos")
                 self.update_stats["failed_updates"] += 1
                 return False
 
@@ -133,48 +122,6 @@ class UpdaterService:
             "stats": self.update_stats,
             "next_update": self._get_next_update_time(),
         }
-
-    async def _download_funvisis_data(self) -> Optional[FunvisisCollection]:
-        """Descarga datos desde FUNVISIS"""
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-            "Accept-Encoding": "gzip, deflate",
-            "Connection": "keep-alive",
-        }
-
-        try:
-            timeout = aiohttp.ClientTimeout(total=30)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(self.funvisis_url, headers=headers) as response:
-                    if response.status == 200:
-                        # Intentar decodificar como JSON independientemente del content-type
-                        try:
-                            data = await response.json()
-                        except:
-                            # Si falla el JSON, intentar como texto y parsearlo
-                            text_data = await response.text()
-                            import json
-
-                            data = json.loads(text_data)
-
-                        self.logger.info(
-                            f"Datos descargados: {len(data.get('features', []))} sismos"
-                        )
-                        return FunvisisCollection(**data)
-                    else:
-                        self.logger.error(
-                            f"Error HTTP {response.status} al descargar datos"
-                        )
-                        return None
-
-        except asyncio.TimeoutError:
-            self.logger.error("Timeout al descargar datos de FUNVISIS")
-            return None
-        except Exception as e:
-            self.logger.error(f"Error al descargar datos: {e}")
-            return None
 
     def _get_next_update_time(self) -> Optional[str]:
         """Calcula la hora de la próxima actualización"""

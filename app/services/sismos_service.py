@@ -1,18 +1,18 @@
 """
-Servicio para manejar datos de sismos
+Servicio para manejar datos de sismos - Conectado a API de USGS
 """
 
 import json
 import os
 import shutil
 import glob
-from datetime import datetime
+import requests
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import logging
 
 from ..models.schemas import (
     SismosCollection,
-    FunvisisCollection,
     SismosStats,
     Sismo,
     SismoProperties,
@@ -21,32 +21,148 @@ from ..models.schemas import (
 
 
 class SismosService:
-    """Servicio para manejar operaciones de sismos"""
+    """Servicio para manejar operaciones de sismos con datos del USGS"""
 
     def __init__(self, data_file: str = "sismosve.json"):
         self.data_file = data_file
         self.logger = logging.getLogger(__name__)
+        self.cache = None
+        self.last_update = None
+        
+        # Configuración de la API de USGS
+        self.usgs_api_url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+        self.usgs_params = {
+            "format": "geojson",
+            "starttime": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
+            "minmagnitude": 4.0,  # Sismos de magnitud significativa
+            "orderby": "time",
+            "limit": 50,
+            "minlatitude": 0.0,    # Límites para Venezuela
+            "maxlatitude": 15.0,
+            "minlongitude": -75.0,
+            "maxlongitude": -60.0,
+        }
 
     def load_sismos(self) -> Optional[SismosCollection]:
-        """Carga los sismos desde el archivo JSON"""
+        """
+        Carga los sismos desde la API del USGS en tiempo real.
+        Si falla, intenta cargar desde el archivo local como fallback.
+        """
+        try:
+            # Intentar obtener datos de USGS
+            self.logger.info("Consultando API de USGS...")
+            
+            # Actualizar fecha de inicio para obtener datos recientes
+            self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+            
+            response = requests.get(
+                self.usgs_api_url, 
+                params=self.usgs_params, 
+                timeout=15,
+                headers={"User-Agent": "SismosVE/1.0"}
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            sismos_collection = self._transform_usgs_to_sismos(data)
+            
+            # Guardar en caché
+            self.cache = sismos_collection
+            self.last_update = datetime.now()
+            
+            # También guardar en archivo local para fallback
+            self.save_sismos(sismos_collection, create_backup=False)
+            
+            self.logger.info(f"Datos actualizados desde USGS: {len(sismos_collection.features)} sismos")
+            return sismos_collection
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error al obtener datos de USGS: {e}")
+            
+            # Fallback: intentar cargar desde archivo local
+            self.logger.info("Usando datos locales como fallback...")
+            return self._load_from_file()
+            
+        except Exception as e:
+            self.logger.error(f"Error inesperado: {e}")
+            return self._load_from_file()
+
+    def _load_from_file(self) -> Optional[SismosCollection]:
+        """Carga datos desde el archivo local (fallback)"""
         try:
             if not os.path.exists(self.data_file):
                 self.logger.warning(f"Archivo {self.data_file} no existe")
-                return None
-
+                # Crear datos vacíos
+                return SismosCollection(type="sismos", features=[])
+            
             with open(self.data_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-
-            # Si los datos están en formato FUNVISIS, transformarlos
-            if data.get("type") == "FeatureCollection":
-                funvisis_data = FunvisisCollection(**data)
-                return self.transform_funvisis_to_sismos(funvisis_data)
-            else:
-                return SismosCollection(**data)
-
+                
+            # Si el archivo está vacío o no tiene features, devolver colección vacía
+            if not data or not data.get("features"):
+                return SismosCollection(type="sismos", features=[])
+                
+            return SismosCollection(**data)
+            
         except Exception as e:
-            self.logger.error(f"Error al cargar sismos: {e}")
-            return None
+            self.logger.error(f"Error al cargar archivo local: {e}")
+            return SismosCollection(type="sismos", features=[])
+
+    def _transform_usgs_to_sismos(self, usgs_data: Dict[str, Any]) -> SismosCollection:
+        """
+        Convierte el formato GeoJSON de USGS al formato SismosCollection.
+        """
+        sismos = []
+        
+        for feature in usgs_data.get('features', []):
+            props = feature.get('properties', {})
+            geom = feature.get('geometry', {})
+            coords = geom.get('coordinates', [0, 0, 0])
+            
+            # Convertir tiempo de Unix a fecha/hora
+            time_ms = props.get('time', 0)
+            if time_ms > 0:
+                date_time = datetime.fromtimestamp(time_ms / 1000)
+                fecha_str = date_time.strftime("%d-%m-%Y")
+                hora_str = date_time.strftime("%H:%M")
+            else:
+                fecha_str = "01-01-2024"
+                hora_str = "00:00"
+            
+            # Obtener magnitud
+            mag = props.get('mag', 0)
+            if mag is None:
+                mag = 0
+            
+            # Crear propiedades
+            properties = SismoProperties(
+                depth=f"{coords[2]:.1f} km" if coords[2] and coords[2] != 0 else "N/D",
+                value=f"{mag:.1f}",
+                addressFormatted=props.get('place', 'Ubicación desconocida'),
+                time=hora_str,
+                country="Venezuela",
+                date=fecha_str,
+                lat=str(coords[1]) if coords[1] else "0",
+                long=str(coords[0]) if coords[0] else "0"
+            )
+            
+            # Crear geometría
+            geometry = Geometry(
+                type="Point",
+                coordinates=[coords[0], coords[1]] if coords[0] and coords[1] else [0, 0],
+                marcador="marker"
+            )
+            
+            # Crear sismo
+            sismo = Sismo(
+                type="Sismo",
+                geometry=geometry,
+                properties=properties
+            )
+            
+            sismos.append(sismo)
+        
+        return SismosCollection(type="sismos", features=sismos)
 
     def save_sismos(self, sismos: SismosCollection, create_backup: bool = True) -> bool:
         """Guarda los sismos en el archivo JSON"""
@@ -65,39 +181,6 @@ class SismosService:
         except Exception as e:
             self.logger.error(f"Error al guardar sismos: {e}")
             return False
-
-    def transform_funvisis_to_sismos(
-        self, funvisis_data: FunvisisCollection
-    ) -> SismosCollection:
-        """Transforma datos de FUNVISIS al formato de sismos"""
-        sismos = []
-
-        for feature in funvisis_data.features:
-            # Transformar propiedades
-            properties = SismoProperties(
-                depth=feature.properties.phoneFormatted or feature.properties.state,
-                value=feature.properties.phone,
-                addressFormatted=feature.properties.address,
-                time=feature.properties.city,
-                country=feature.properties.country,
-                date=feature.properties.postalCode,
-                lat=feature.properties.lat,
-                long=feature.properties.long,
-            )
-
-            # Transformar geometría
-            geometry = Geometry(
-                type=feature.geometry.type,
-                coordinates=feature.geometry.coordinates,
-                marcador=feature.geometry.marcador,
-            )
-
-            # Crear sismo
-            sismo = Sismo(type="Sismo", geometry=geometry, properties=properties)
-
-            sismos.append(sismo)
-
-        return SismosCollection(type="sismos", features=sismos)
 
     def get_sismos_stats(self, sismos: SismosCollection) -> SismosStats:
         """Calcula estadísticas de los sismos"""
@@ -132,7 +215,7 @@ class SismosService:
             magnitud_maxima=max(magnitudes),
             magnitud_promedio=sum(magnitudes) / len(magnitudes),
             ultimo_sismo=ultimo_sismo.dict() if ultimo_sismo else None,
-            ultima_actualizacion=datetime.now(),
+            ultima_actualizacion=self.last_update if self.last_update else datetime.now(),
         )
 
     def get_sismos_by_magnitude(
@@ -183,10 +266,7 @@ class SismosService:
             backup_files = glob.glob(backup_pattern)
 
             if len(backup_files) > max_backups:
-                # Ordenar por fecha de modificación (más antiguo primero)
                 backup_files.sort(key=os.path.getmtime)
-
-                # Eliminar los más antiguos
                 files_to_delete = backup_files[:-max_backups]
                 for file_to_delete in files_to_delete:
                     os.remove(file_to_delete)
@@ -208,7 +288,6 @@ class SismosService:
     def _parse_datetime(self, date_str: str, time_str: str) -> datetime:
         """Convierte fecha y hora string a datetime"""
         try:
-            # Formato esperado: DD-MM-YYYY y HH:MM
             day, month, year = date_str.split("-")
             hours, minutes = time_str.split(":")
             return datetime(int(year), int(month), int(day), int(hours), int(minutes))
