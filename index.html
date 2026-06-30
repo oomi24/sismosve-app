@@ -34,6 +34,7 @@
             top: 0;
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: relative;
         }
         
         .header h1 {
@@ -52,6 +53,27 @@
             font-size: 11px;
             opacity: 0.6;
             margin-top: 2px;
+        }
+
+        /* Botón de ayuda en el header */
+        #helpBtn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #helpBtn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        #helpBtn:active {
+            transform: scale(0.95);
         }
         
         /* Stats Cards */
@@ -94,6 +116,168 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border: 2px solid white;
+        }
+        
+        /* ===== PANEL DE AYUDA ===== */
+        #helpPanel {
+            display: none;
+            padding: 20px;
+            background: white;
+            margin: 0 15px 15px 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+            transition: all 0.3s;
+        }
+        
+        #helpPanel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        #helpPanel .panel-header h3 {
+            margin: 0;
+            color: #1a1a2e;
+        }
+        #helpPanel .panel-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+        }
+        #helpPanel .panel-header .close-btn:hover {
+            color: #333;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background: #e0e0e0;
+            color: #333;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s;
+            min-width: 70px;
+        }
+        .tab-btn.active {
+            background: #e94560;
+            color: white;
+        }
+        .tab-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .tab-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .tab-content h4 {
+            color: #e94560;
+            margin-top: 0;
+        }
+        .tab-content ul, .tab-content ol {
+            padding-left: 20px;
+        }
+        .tab-content li {
+            margin-bottom: 4px;
+        }
+        
+        .emergency-card {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e94560;
+        }
+        .emergency-card.orange {
+            border-left-color: #f5a623;
+        }
+        .emergency-card.blue {
+            border-left-color: #2196F3;
+        }
+        .emergency-card.green {
+            border-left-color: #4CAF50;
+        }
+        
+        .emergency-card a {
+            color: #e94560;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .emergency-card a:hover {
+            text-decoration: underline;
+        }
+        
+        .help-image {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .help-image img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .help-image .caption {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .info-box {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .info-box.blue {
+            background: #f0f7ff;
+            border-left: 4px solid #2196F3;
+        }
+        .info-box.orange {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+        .info-box.green {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        /* Tabla de contactos */
+        .contact-table {
+            width: 100%;
+            font-size: 13px;
+            border-collapse: collapse;
+        }
+        .contact-table td {
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .contact-table td:last-child {
+            text-align: right;
+        }
+        .contact-table a {
+            color: #e94560;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .contact-table a:hover {
+            text-decoration: underline;
         }
         
         /* Sección de sismos */
@@ -159,12 +343,6 @@
         .sismo-item .detalle {
             font-size: 12px;
             color: #888;
-            margin-top: 2px;
-        }
-        
-        .sismo-item .fecha {
-            font-size: 11px;
-            color: #aaa;
             margin-top: 2px;
         }
         
@@ -250,6 +428,7 @@
         /* Responsive */
         @media (max-width: 600px) {
             .header h1 { font-size: 18px; }
+            #helpBtn { font-size: 16px; padding: 6px 10px; }
             .stats-container {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
@@ -265,15 +444,38 @@
                 padding: 10px 18px;
                 font-size: 13px;
             }
+            #helpPanel {
+                margin: 0 10px 10px 10px;
+                padding: 15px;
+                max-height: 500px;
+            }
+            .tab-btn {
+                font-size: 11px;
+                padding: 8px 10px;
+            }
+            .emergency-card a {
+                font-size: 16px;
+            }
         }
         
         @media (max-width: 400px) {
             .stats-container { grid-template-columns: repeat(2, 1fr); }
             .stat-card .number { font-size: 17px; }
             .stat-card .label { font-size: 10px; }
+            #helpPanel {
+                padding: 12px;
+                max-height: 450px;
+            }
+            .tab-btn {
+                font-size: 10px;
+                padding: 6px 8px;
+            }
+            .help-image img {
+                max-height: 150px;
+            }
         }
         
-        /* Modo oscuro para ahorrar batería */
+        /* Modo oscuro */
         @media (prefers-color-scheme: dark) {
             body { background: #0d0d1a; color: #eee; }
             .sismo-item { background: #1a1a2e; }
@@ -283,18 +485,34 @@
             .section-title { color: #eee; }
             .section-title .count { color: #aaa; }
             .header { background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%); }
+            #helpPanel { background: #1a1a2e; }
+            #helpPanel .panel-header h3 { color: #eee; }
+            .tab-content { color: #ddd; }
+            .tab-btn { background: #333; color: #ddd; }
+            .tab-btn.active { background: #e94560; color: white; }
+            .emergency-card { background: #222; }
+            .emergency-card a { color: #ff6b81; }
+            .contact-table td { border-bottom-color: #333; }
+            .info-box.blue { background: #1a2a3a; border-left-color: #2196F3; }
+            .info-box.orange { background: #2a1a0a; border-left-color: #ff9800; }
+            .info-box.green { background: #0a2a1a; border-left-color: #4CAF50; }
+            .help-image .caption { color: #888; }
+            #helpPanel .panel-header .close-btn { color: #aaa; }
+            #helpPanel .panel-header .close-btn:hover { color: #fff; }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- ===== HEADER ===== -->
     <div class="header">
         <h1>🌋 SismosVE</h1>
         <p>Monitoreo Sísmico de Venezuela</p>
         <div class="update-time" id="updateTime">Actualizando...</div>
+        <!-- Botón de ayuda -->
+        <button id="helpBtn" onclick="toggleHelp()">📋</button>
     </div>
 
-    <!-- Stats -->
+    <!-- ===== ESTADÍSTICAS ===== -->
     <div class="stats-container" id="stats">
         <div class="stat-card">
             <div class="number" id="totalSismos">-</div>
@@ -314,10 +532,176 @@
         </div>
     </div>
 
-    <!-- Mapa -->
+    <!-- ===== MAPA ===== -->
     <div id="map"></div>
 
-    <!-- Lista de sismos -->
+    <!-- ===== PANEL DE AYUDA ===== -->
+    <div id="helpPanel">
+        <div class="panel-header">
+            <h3>📋 Información y Ayuda</h3>
+            <button class="close-btn" onclick="toggleHelp()">✕</button>
+        </div>
+
+        <!-- Pestañas -->
+        <div class="tab-buttons" id="tabButtons">
+            <button class="tab-btn active" onclick="showTab('kit')">🎒 Mochila</button>
+            <button class="tab-btn" onclick="showTab('contactos')">📞 Contactos</button>
+            <button class="tab-btn" onclick="showTab('alertas')">🔔 Alertas</button>
+            <button class="tab-btn" onclick="showTab('familiares')">👨‍👩‍👧 Familiares</button>
+            <button class="tab-btn" onclick="showTab('educacion')">📘 Educación</button>
+        </div>
+
+        <!-- ===== PESTAÑA: MOCHILA ===== -->
+        <div id="tab-kit" class="tab-content">
+            <h4>🎒 Mochila de Auxilio (72 horas)</h4>
+            
+            <div class="help-image">
+                <img src="/images/mochila-emergencia.png" alt="Mochila de Auxilio" onerror="this.style.display='none'">
+                <p class="caption">¿Qué debe tener tu mochila de emergencia?</p>
+            </div>
+            
+            <ul>
+                <li><strong>💧 Agua:</strong> 2 litros por persona/día</li>
+                <li><strong>🍝 Alimentos:</strong> Enlatados, barras energéticas, comida no perecedera</li>
+                <li><strong>💊 Botiquín:</strong> Vendas, alcohol, medicinas recetadas</li>
+                <li><strong>🔦 Linterna</strong> con pilas extra</li>
+                <li><strong>📻 Radio</strong> AM/FM con pilas o dínamo</li>
+                <li><strong>🆔 Documentos:</strong> Copias de cédula, escrituras, seguros</li>
+                <li><strong>🧥 Ropa:</strong> Manta, impermeable, calzado resistente</li>
+                <li><strong>🔧 Herramientas:</strong> Navaja multiuso, silbato, encendedor</li>
+                <li><strong>📱 Cargador</strong> portátil y móvil</li>
+            </ul>
+            
+            <div class="info-box green">
+                <strong>✅ Revisa los alimentos y medicinas cada 3 meses.</strong>
+            </div>
+        </div>
+
+        <!-- ===== PESTAÑA: CONTACTOS ===== -->
+        <div id="tab-contactos" class="tab-content" style="display:none;">
+            <h4>📞 Directorio de Emergencia</h4>
+            
+            <div class="help-image">
+                <img src="/images/directorio-emergencia.png" alt="Directorio de emergencia" onerror="this.style.display='none'">
+            </div>
+            
+            <div class="emergency-card">
+                <strong>🆘 Reportar Desaparecidos:</strong><br>
+                <a href="tel:08007372282">0800-RESCATE (0800-7372282)</a>
+            </div>
+            
+            <div class="emergency-card orange">
+                <strong>📱 Aplicación VenApp:</strong><br>
+                <span style="font-size:14px;">Reporta desaparecidos y coordina ayuda</span>
+            </div>
+            
+            <table class="contact-table">
+                <tr><td><strong>Protección Civil</strong></td><td><a href="tel:Ven911">Ven911</a></td></tr>
+                <tr><td><strong>Emergencias Médicas</strong></td><td><a href="tel:08007258392">0800-SALUDYA</a></td></tr>
+                <tr><td><strong>Ambulancias</strong></td><td><a href="tel:08002628526">0800-AMBULANCIA</a></td></tr>
+                <tr><td><strong>Protección de Niños</strong></td><td><a href="tel:08003264542">0800-FAMILIA</a></td></tr>
+                <tr><td><strong>Atención a la Mujer</strong></td><td><a href="tel:08006853737">0800-MUJERES</a></td></tr>
+            </table>
+            
+            <div class="info-box blue">
+                <strong>📌 Guarda estos números en tu teléfono.</strong>
+            </div>
+        </div>
+
+        <!-- ===== PESTAÑA: ALERTAS ===== -->
+        <div id="tab-alertas" class="tab-content" style="display:none;">
+            <h4>🔔 Activar Alertas de Terremoto</h4>
+            
+            <div class="help-image">
+                <img src="/images/alertas-android.png" alt="Activar Alertas en Android" onerror="this.style.display='none'">
+                <p class="caption">Configuración paso a paso en tu Android</p>
+            </div>
+            
+            <p><strong>En Android (Google Play Services):</strong></p>
+            <ol>
+                <li>Ve a <strong>Configuración</strong> → <strong>Seguridad</strong> o <strong>Ubicación</strong></li>
+                <li>Busca <strong>"Alertas de terremotos"</strong> (Earthquake Alerts)</li>
+                <li>Activa el interruptor</li>
+                <li>Habilita el <strong>acceso a ubicación</strong> para Servicios de Google Play</li>
+            </ol>
+            
+            <div class="info-box blue">
+                <strong>💡 ¿No te llegó la alerta?</strong><br>
+                <span style="font-size:13px;">Asegúrate de tener activada la ubicación y que tu teléfono sea compatible con Android 9+.</span>
+            </div>
+            
+            <div class="info-box orange" style="margin-top:10px;">
+                <strong>⚠️ ¿Por qué no sonó?</strong><br>
+                <span style="font-size:13px;">La alerta solo se activa para sismos de magnitud 4.5+ y cuando el sistema detecta movimiento.</span>
+            </div>
+        </div>
+
+        <!-- ===== PESTAÑA: FAMILIARES ===== -->
+        <div id="tab-familiares" class="tab-content" style="display:none;">
+            <h4>👨‍👩‍👧 Enlaces de Búsqueda de Familiares</h4>
+            
+            <div class="help-image">
+                <img src="/images/busqueda-familiares.png" alt="Buscar familiares" onerror="this.style.display='none'">
+                <p class="caption">Recursos para encontrar a tus seres queridos</p>
+            </div>
+            
+            <p>Si estás buscando a un familiar, utiliza estos recursos:</p>
+            
+            <div class="emergency-card">
+                <strong>📱 Línea gratuita:</strong><br>
+                <a href="tel:08007372282">0800-RESCATE (0800-7372282)</a>
+            </div>
+            
+            <ul>
+                <li><strong>📱 Aplicación:</strong> <a href="#" style="color:#e94560;">VenApp</a> (Reporta desaparecidos)</li>
+                <li><strong>🆘 Cruz Roja:</strong> <a href="https://www.cruzroja.org.ve" target="_blank" style="color:#e94560;">https://www.cruzroja.org.ve</a></li>
+                <li><strong>🌐 Google Person Finder:</strong> <a href="https://personfinder.google.com" target="_blank" style="color:#e94560;">https://personfinder.google.com</a></li>
+            </ul>
+            
+            <div class="info-box orange">
+                <strong>⚠️ Importante:</strong> Ten a mano el nombre completo, cédula y última ubicación conocida de la persona que buscas.
+            </div>
+        </div>
+
+        <!-- ===== PESTAÑA: EDUCACIÓN ===== -->
+        <div id="tab-educacion" class="tab-content" style="display:none;">
+            <h4>📘 Educación Sísmica</h4>
+            
+            <div class="help-image">
+                <img src="/images/agacharse-cubrirse.png" alt="Agacharse, Cubrirse, Agarrarse" onerror="this.style.display='none'">
+                <p class="caption">Los 3 pasos para protegerte durante un sismo</p>
+            </div>
+            
+            <h5 style="color:#e94560;">🔴 Durante el sismo:</h5>
+            <ol>
+                <li><strong>Agáchate</strong> al suelo inmediatamente</li>
+                <li><strong>Cúbrete</strong> la cabeza y el cuello</li>
+                <li><strong>Agárrate</strong> a algo firme</li>
+            </ol>
+            
+            <h5 style="color:#e94560;">🟠 Antes del sismo:</h5>
+            <ul>
+                <li>Prepara tu mochila de auxilio</li>
+                <li>Identifica zonas seguras en tu casa</li>
+                <li>Practica simulacros con tu familia</li>
+                <li>Activa las alertas en tu teléfono</li>
+            </ul>
+            
+            <h5 style="color:#e94560;">🟢 Después del sismo:</h5>
+            <ul>
+                <li>Revisa si hay heridos y brinda primeros auxilios</li>
+                <li>Corta el gas y la electricidad si hay daños</li>
+                <li>Alejate de ventanas y edificios dañados</li>
+                <li>Usa los contactos de emergencia</li>
+            </ul>
+            
+            <div class="info-box blue">
+                <strong>💡 Recuerda:</strong> Mantén la calma y ayuda a los demás.
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== LISTA DE SISMOS ===== -->
     <div class="section-title">
         <span>📋 Sismos Registrados</span>
         <span class="count" id="sismosCount">0</span>
@@ -329,22 +713,22 @@
         </div>
     </div>
 
-    <!-- Botón actualizar -->
+    <!-- ===== BOTÓN ACTUALIZAR ===== -->
     <button class="refresh-btn" id="refreshBtn" onclick="cargarDatos()">
         <span class="spinner"></span>
         <span class="text">🔄 Actualizar</span>
     </button>
 
-    <!-- Leaflet JS -->
+    <!-- ===== LEAFTET JS ===== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Script principal -->
+    <!-- ===== SCRIPT PRINCIPAL ===== -->
     <script>
         let mapa = null;
         let marcadores = [];
         let datosActuales = [];
 
-        // Inicializar mapa
+        // --- Inicializar mapa ---
         function initMap() {
             mapa = L.map('map', {
                 center: [10.5, -66.9],
@@ -360,7 +744,7 @@
             }).addTo(mapa);
         }
 
-        // Obtener badge según magnitud
+        // --- Badge según magnitud ---
         function getBadge(magnitud) {
             const val = parseFloat(magnitud);
             if (val < 3.5) return '<span class="badge menor">Bajo</span>';
@@ -368,13 +752,19 @@
             return '<span class="badge alta">Alto</span>';
         }
 
-        // Formatear fecha
+        // --- Formatear fecha ---
         function formatDate(dateStr) {
             if (!dateStr) return 'N/D';
             try {
-                const parts = dateStr.split('-');
-                if (parts.length === 3) {
-                    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                if (dateStr.includes('-')) {
+                    const parts = dateStr.split('-');
+                    if (parts.length === 3) {
+                        if (parts[0].length === 4) {
+                            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                        } else {
+                            return dateStr;
+                        }
+                    }
                 }
                 return dateStr;
             } catch {
@@ -382,24 +772,20 @@
             }
         }
 
-        // Cargar datos desde la API
+        // --- Cargar datos desde la API ---
         async function cargarDatos() {
             const btn = document.getElementById('refreshBtn');
             btn.classList.add('loading');
 
             try {
-                // 1. Cargar lista de sismos
                 const resSismos = await fetch('/api/sismos');
                 const dataSismos = await resSismos.json();
                 
-                // 2. Cargar estadísticas
                 const resStats = await fetch('/api/sismos/stats');
                 const dataStats = await resStats.json();
 
-                // Guardar datos
                 datosActuales = dataSismos.features || dataSismos.sismos || [];
                 
-                // Actualizar UI
                 actualizarStats(dataStats);
                 actualizarMapa(datosActuales);
                 actualizarLista(datosActuales);
@@ -418,7 +804,7 @@
             }
         }
 
-        // Actualizar estadísticas
+        // --- Actualizar estadísticas ---
         function actualizarStats(stats) {
             document.getElementById('totalSismos').textContent = stats.total_sismos || '0';
             document.getElementById('maxMagnitud').textContent = stats.magnitud_maxima?.toFixed(1) || '-';
@@ -426,9 +812,8 @@
             document.getElementById('minMagnitud').textContent = stats.magnitud_minima?.toFixed(1) || '-';
         }
 
-        // Actualizar mapa
+        // --- Actualizar mapa ---
         function actualizarMapa(sismos) {
-            // Limpiar marcadores anteriores
             marcadores.forEach(m => mapa.removeLayer(m));
             marcadores = [];
 
@@ -445,7 +830,6 @@
                 const props = s.properties || s;
                 const magnitud = parseFloat(props.value) || 0;
                 
-                // Color según magnitud
                 let color = '#4CAF50';
                 if (magnitud >= 4.5) color = '#FF5722';
                 else if (magnitud >= 3.5) color = '#FFC107';
@@ -471,14 +855,13 @@
                 marcadores.push(marker);
             });
 
-            // Ajustar vista si hay sismos
             if (marcadores.length > 0) {
                 const group = L.featureGroup(marcadores);
                 mapa.fitBounds(group.getBounds(), { padding: [30, 30] });
             }
         }
 
-        // Actualizar lista
+        // --- Actualizar lista ---
         function actualizarLista(sismos) {
             const container = document.getElementById('sismosList');
             document.getElementById('sismosCount').textContent = sismos.length;
@@ -492,7 +875,6 @@
                 return;
             }
 
-            // Ordenar por fecha (más reciente primero)
             const sorted = [...sismos].sort((a, b) => {
                 const dateA = a.properties?.date || a.date || '';
                 const dateB = b.properties?.date || b.date || '';
@@ -525,14 +907,14 @@
             }).join('');
         }
 
-        // Centrar mapa en un sismo
+        // --- Centrar mapa en un sismo ---
         function centrarEnSismo(lat, lng) {
             if (mapa && lat && lng) {
                 mapa.setView([parseFloat(lat), parseFloat(lng)], 10);
             }
         }
 
-        // Actualizar hora
+        // --- Actualizar hora ---
         function actualizarHora(fechaISO) {
             const el = document.getElementById('updateTime');
             if (fechaISO) {
@@ -545,12 +927,47 @@
             }
         }
 
-        // Iniciar
+        // ===== FUNCIONES DEL PANEL DE AYUDA =====
+        function toggleHelp() {
+            const panel = document.getElementById('helpPanel');
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function showTab(tabName) {
+            // Ocultar todo
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Desactivar todos los botones
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar el seleccionado
+            const content = document.getElementById('tab-' + tabName);
+            if (content) {
+                content.style.display = 'block';
+            }
+            
+            // Activar el botón
+            const buttons = document.querySelectorAll('.tab-btn');
+            const index = ['kit', 'contactos', 'alertas', 'familiares', 'educacion'].indexOf(tabName);
+            if (index !== -1 && buttons[index]) {
+                buttons[index].classList.add('active');
+            }
+        }
+
+        // ===== INICIAR =====
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
             cargarDatos();
-            
-            // Actualizar automáticamente cada 5 minutos
+            document.getElementById('helpPanel').style.display = 'none';
             setInterval(cargarDatos, 300000);
         });
     </script>
