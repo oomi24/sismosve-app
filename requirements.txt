@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+jinja2
+python-multipart
+aiofiles
+aiohttp
+apscheduler
+requests
+mangum
