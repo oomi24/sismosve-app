@@ -49,5 +49,33 @@ async def serve_frontend():
     if index_path.exists():
         return index_path.read_text()
     return "<h1>Error: index.html no encontrado</h1>"
+from fastapi.responses import HTMLResponse
+from pathlib import Path
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    """Sirve el frontend index.html"""
+    # Buscar en diferentes ubicaciones
+    possible_paths = [
+        Path(__file__).parent.parent / "index.html",
+        Path(__file__).parent.parent / "public" / "index.html",
+        Path("/vercel/path0/index.html"),  # Ruta en Vercel
+    ]
+    
+    for path in possible_paths:
+        if path.exists():
+            return path.read_text()
+    
+    return """
+    <html>
+        <head><title>SismosVE</title></head>
+        <body>
+            <h1>🌋 SismosVE</h1>
+            <p>API funcionando correctamente</p>
+            <p><a href="/api/sismos">Ver datos de sismos</a></p>
+        </body>
+    </html>
+    """
+
 # Handler para Vercel
 handler = Mangum(app)
