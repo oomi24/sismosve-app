@@ -1,79 +1,130 @@
 import sys
 import os
+import logging
 from pathlib import Path
-from fastapi.responses import HTMLResponse
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from mangum import Mangum
+import requests
 
-# --- CRÍTICO: Añade la raíz del proyecto al path de Python ---
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# --- Añadir la raíz del proyecto al path ---
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 
-# --- Importaciones del proyecto original ---
-try:
-    from app.routers import sismos
-    from app.config import sismos_service
-    print("✅ Todas las importaciones exitosas")
-    print("🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0")
-except ImportError as e:
-    print(f"❌ Error de importación: {e}")
-    from fastapi import APIRouter
-    sismos = APIRouter()
-    @sismos.get("/sismos")
-    async def fallback_sismos():
-        return {"error": f"Error de importación: {str(e)}"}
-    @sismos.get("/sismos/stats")
-    async def fallback_stats():
-        return {"error": f"Error de importación: {str(e)}"}
-    @sismos.get("/sismos/recent")
-    async def fallback_recent():
-        return {"error": f"Error de importación: {str(e)}"}
-
 # --- Crear la aplicación FastAPI ---
-app = FastAPI(
-    title="SismosVE API",
-    description="API para consultar sismos en Venezuela",
-    version="1.0.0"
-)
+app = FastAPI(title="SismosVE API")
 
-# --- Incluir los routers del proyecto ---
-app.include_router(sismos.router)
+# --- ENDPOINT: SISMOS DESDE USGS ---
+@app.get("/api/sismos")
+async def get_sismos():
+    """Obtiene sismos de la API de USGS con magnitud >= 2.0"""
+    try:
+        url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+        params = {
+            "format": "geojson",
+            "starttime": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
+            "minmagnitude": 2.0,  # ✅ FORZADO A 2.0
+            "orderby": "time",
+            "limit": 100,
+            "minlatitude": 0.0,
+            "maxlatitude": 15.0,
+            "minlongitude": -75.0,
+            "maxlongitude": -60.0,
+        }
+        response = requests.get(url, params=params, timeout=15)
+        data = response.json()
+        
+        # Transformar datos al formato esperado
+        features = []
+        for feature in data.get('features', []):
+            props = feature.get('properties', {})
+            geom = feature.get('geometry', {})
+            coords = geom.get('coordinates', [0, 0, 0])
+            time_ms = props.get('time', 0)
+            if time_ms > 0:
+                from datetime import datetime
+                date_time = datetime.fromtimestamp(time_ms / 1000)
+                fecha_str = date_time.strftime("%d-%m-%Y")
+                hora_str = date_time.strftime("%H:%M")
+            else:
+                fecha_str = "N/D"
+                hora_str = "N/D"
+            mag = props.get('mag', 0)
+            features.append({
+                "type": "Sismo",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [coords[0], coords[1]],
+                    "marcador": "marker"
+                },
+                "properties": {
+                    "depth": f"{coords[2]:.1f} km" if coords[2] else "N/D",
+                    "value": f"{mag:.1f}",
+                    "addressFormatted": props.get('place', 'Ubicación desconocida'),
+                    "time": hora_str,
+                    "country": "Venezuela",
+                    "date": fecha_str,
+                    "lat": str(coords[1]) if coords[1] else "0",
+                    "long": str(coords[0]) if coords[0] else "0"
+                }
+            })
+        return {"type": "sismos", "features": features}
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return {"type": "sismos", "features": []}
+
+# --- ENDPOINT: ESTADÍSTICAS ---
+@app.get("/api/sismos/stats")
+async def get_stats():
+    """Obtiene estadísticas de los sismos"""
+    try:
+        sismos_data = await get_sismos()
+        features = sismos_data.get('features', [])
+        if not features:
+            return {"total_sismos": 0, "magnitud_minima": 0, "magnitud_maxima": 0, "magnitud_promedio": 0}
+        magnitudes = []
+        for f in features:
+            try:
+                mag = float(f['properties']['value'])
+                magnitudes.append(mag)
+            except:
+                pass
+        if not magnitudes:
+            return {"total_sismos": 0, "magnitud_minima": 0, "magnitud_maxima": 0, "magnitud_promedio": 0}
+        return {
+            "total_sismos": len(magnitudes),
+            "magnitud_minima": min(magnitudes),
+            "magnitud_maxima": max(magnitudes),
+            "magnitud_promedio": sum(magnitudes) / len(magnitudes),
+            "ultimo_sismo": features[0] if features else None,
+            "ultima_actualizacion": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return {"total_sismos": 0, "magnitud_minima": 0, "magnitud_maxima": 0, "magnitud_promedio": 0}
 
 # --- SERVIR EL FRONTEND ---
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
-    """Sirve el archivo index.html desde la raíz del proyecto."""
-    # Buscar en diferentes ubicaciones
     posibles_rutas = [
-        Path("/opt/render/project/src/index.html"),  # Render
-        Path("/app/index.html"),  # Render (alternativo)
-        Path(__file__).parent.parent / "index.html",  # Local
-        Path("index.html"),  # CWD
+        Path("/opt/render/project/src/index.html"),
+        Path("/app/index.html"),
+        Path(__file__).parent.parent / "index.html",
+        Path("index.html"),
     ]
-    
     for ruta in posibles_rutas:
         if ruta.exists():
-            contenido = ruta.read_text(encoding='utf-8')
-            print(f"✅ Sirviendo frontend desde: {ruta}")
-            return contenido
-    
-    print("❌ No se encontró index.html en ninguna ruta")
-    return """
-    <html>
-        <head><title>SismosVE</title></head>
-        <body>
-            <h1>🌋 SismosVE</h1>
-            <p>API funcionando correctamente</p>
-            <p><a href="/api/sismos">📊 Ver datos de sismos (JSON)</a></p>
-            <p><a href="/api/sismos/stats">📈 Ver estadísticas</a></p>
-        </body>
-    </html>
-    """
+            return ruta.read_text(encoding='utf-8')
+    return "<h1>🌋 SismosVE</h1><p>API funcionando</p>"
 
-# --- ENDPOINT DE PRUEBA ---
+# --- HEALTH CHECK ---
 @app.get("/health")
-async def health_check():
-    return {"status": "online", "message": "SismosVE API funcionando correctamente"}
+async def health():
+    return {"status": "online", "message": "SismosVE API"}
 
 # --- Handler para Vercel ---
 handler = Mangum(app)
@@ -81,4 +132,5 @@ handler = Mangum(app)
 # --- Para ejecutar localmente ---
 if __name__ == "__main__":
     import uvicorn
+    from datetime import datetime, timedelta
     uvicorn.run(app, host="0.0.0.0", port=8000)
