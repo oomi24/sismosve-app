@@ -284,3 +284,4 @@ class SismosService:
             return datetime(int(year), int(month), int(day), int(hours), int(minutes))
         except:
             return datetime.min
+# Forzar reinicio de la función
