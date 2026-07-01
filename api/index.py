@@ -7,6 +7,7 @@ from mangum import Mangum
 
 # --- CRÍTICO: Añade la raíz del proyecto al path de Python ---
 # Esto asegura que 'from app.xxx import yyy' funcione en Vercel
+# ✅ FORZANDO RECONSTRUCCIÓN - 2026-07-01 - CAMBIO DE MAGNITUD A 2.0
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 
@@ -15,6 +16,7 @@ try:
     from app.routers import sismos
     from app.config import sismos_service  # Necesario para que el router funcione
     print("✅ Todas las importaciones exitosas")
+    print("🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0")
 except ImportError as e:
     print(f"❌ Error de importación: {e}")
     # Fallback para que la app no muera
