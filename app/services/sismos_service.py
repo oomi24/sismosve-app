@@ -28,7 +28,7 @@ class SismosService:
         self.logger = logging.getLogger(__name__)
         self.cache = None
         self.last_update = None
-        
+
         # Configuración de la API de USGS - FILTRO DE MAGNITUD 2.0
         self.usgs_api_url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
         self.usgs_params = {
@@ -44,47 +44,46 @@ class SismosService:
         }
 
     def load_sismos(self) -> Optional[SismosCollection]:
-def load_sismos(self) -> Optional[SismosCollection]:
-    """
-    Carga los sismos desde la API del USGS en tiempo real.
-    Si falla, intenta cargar desde el archivo local como fallback.
-    """
-    try:
-        # 🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0
-        self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
-        # Intentar obtener datos de USGS
-        self.logger.info("Consultando API de USGS...")
-        
-        # Actualizar fecha de inicio para obtener datos recientes
-        self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")            
+        """
+        Carga los sismos desde la API del USGS en tiempo real.
+        Si falla, intenta cargar desde el archivo local como fallback.
+        """
+        try:
+            # 🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0
+            self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
+            # Intentar obtener datos de USGS
+            self.logger.info("Consultando API de USGS...")
+
+            # Actualizar fecha de inicio para obtener datos recientes
+            self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+
             response = requests.get(
-                self.usgs_api_url, 
-                params=self.usgs_params, 
+                self.usgs_api_url,
+                params=self.usgs_params,
                 timeout=15,
                 headers={"User-Agent": "SismosVE/1.0"}
             )
             response.raise_for_status()
-            
+
             data = response.json()
             sismos_collection = self._transform_usgs_to_sismos(data)
-            
+
             # Guardar en caché
             self.cache = sismos_collection
             self.last_update = datetime.now()
-            
+
             # También guardar en archivo local para fallback
             self.save_sismos(sismos_collection, create_backup=False)
-            
+
             self.logger.info(f"Datos actualizados desde USGS: {len(sismos_collection.features)} sismos")
             return sismos_collection
-            
+
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Error al obtener datos de USGS: {e}")
-            
             # Fallback: intentar cargar desde archivo local
             self.logger.info("Usando datos locales como fallback...")
             return self._load_from_file()
-            
+
         except Exception as e:
             self.logger.error(f"Error inesperado: {e}")
             return self._load_from_file()
@@ -95,15 +94,15 @@ def load_sismos(self) -> Optional[SismosCollection]:
             if not os.path.exists(self.data_file):
                 self.logger.warning(f"Archivo {self.data_file} no existe")
                 return SismosCollection(type="sismos", features=[])
-            
+
             with open(self.data_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
+
             if not data or not data.get("features"):
                 return SismosCollection(type="sismos", features=[])
-                
+
             return SismosCollection(**data)
-            
+
         except Exception as e:
             self.logger.error(f"Error al cargar archivo local: {e}")
             return SismosCollection(type="sismos", features=[])
@@ -113,12 +112,12 @@ def load_sismos(self) -> Optional[SismosCollection]:
         Convierte el formato GeoJSON de USGS al formato SismosCollection.
         """
         sismos = []
-        
+
         for feature in usgs_data.get('features', []):
             props = feature.get('properties', {})
             geom = feature.get('geometry', {})
             coords = geom.get('coordinates', [0, 0, 0])
-            
+
             # Convertir tiempo de Unix a fecha/hora
             time_ms = props.get('time', 0)
             if time_ms > 0:
@@ -128,12 +127,12 @@ def load_sismos(self) -> Optional[SismosCollection]:
             else:
                 fecha_str = "01-01-2024"
                 hora_str = "00:00"
-            
+
             # Obtener magnitud
             mag = props.get('mag', 0)
             if mag is None:
                 mag = 0
-            
+
             # Crear propiedades
             properties = SismoProperties(
                 depth=f"{coords[2]:.1f} km" if coords[2] and coords[2] != 0 else "N/D",
@@ -145,23 +144,23 @@ def load_sismos(self) -> Optional[SismosCollection]:
                 lat=str(coords[1]) if coords[1] else "0",
                 long=str(coords[0]) if coords[0] else "0"
             )
-            
+
             # Crear geometría
             geometry = Geometry(
                 type="Point",
                 coordinates=[coords[0], coords[1]] if coords[0] and coords[1] else [0, 0],
                 marcador="marker"
             )
-            
+
             # Crear sismo
             sismo = Sismo(
                 type="Sismo",
                 geometry=geometry,
                 properties=properties
             )
-            
+
             sismos.append(sismo)
-        
+
         return SismosCollection(type="sismos", features=sismos)
 
     def save_sismos(self, sismos: SismosCollection, create_backup: bool = True) -> bool:
@@ -286,4 +285,3 @@ def load_sismos(self) -> Optional[SismosCollection]:
             return datetime(int(year), int(month), int(day), int(hours), int(minutes))
         except:
             return datetime.min
-# Forzar reinicio de la función
