@@ -36,7 +36,7 @@ class SismosService:
             "starttime": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
             "minmagnitude": 2.0,  # ✅ CAMBIADO DE 4.0 A 2.0
             "orderby": "time",
-            "limit": 100,  # ✅ AUMENTADO DE 50 A 100
+            "limit": 150,  # ✅ AUMENTADO DE 50 A 150
             "minlatitude": 0.0,
             "maxlatitude": 15.0,
             "minlongitude": -75.0,
