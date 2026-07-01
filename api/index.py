@@ -6,20 +6,17 @@ from fastapi import FastAPI
 from mangum import Mangum
 
 # --- CRÍTICO: Añade la raíz del proyecto al path de Python ---
-# Esto asegura que 'from app.xxx import yyy' funcione en Vercel
-# ✅ FORZANDO RECONSTRUCCIÓN - 2026-07-01 - CAMBIO DE MAGNITUD A 2.0
 root_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(root_dir))
 
 # --- Importaciones del proyecto original ---
 try:
     from app.routers import sismos
-    from app.config import sismos_service  # Necesario para que el router funcione
+    from app.config import sismos_service
     print("✅ Todas las importaciones exitosas")
     print("🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0")
 except ImportError as e:
     print(f"❌ Error de importación: {e}")
-    # Fallback para que la app no muera
     from fastapi import APIRouter
     sismos = APIRouter()
     @sismos.get("/sismos")
@@ -42,16 +39,15 @@ app = FastAPI(
 # --- Incluir los routers del proyecto ---
 app.include_router(sismos.router)
 
-# --- SERVIR EL FRONTEND (index.html) ---
+# --- SERVIR EL FRONTEND (UNA SOLA VEZ) ---
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
     """Sirve el archivo index.html desde la raíz del proyecto."""
-    # Buscar en diferentes ubicaciones posibles
     posibles_rutas = [
-        Path(__file__).parent.parent / "index.html",  # Raíz del proyecto
-        Path("/app/index.html"),  # Render
-        Path("/opt/render/project/src/index.html"),  # Render (alternativo)
-        Path("index.html"),  # Ruta relativa
+        Path(__file__).parent.parent / "index.html",
+        Path("/app/index.html"),
+        Path("/opt/render/project/src/index.html"),
+        Path("index.html"),
     ]
     
     for ruta in posibles_rutas:
@@ -60,7 +56,6 @@ async def serve_frontend():
             print(f"✅ Sirviendo frontend desde: {ruta}")
             return contenido
     
-    # Si no se encuentra, devolver un mensaje de fallback
     print("❌ No se encontró index.html en ninguna ruta")
     return """
     <!DOCTYPE html>
@@ -89,11 +84,7 @@ async def serve_frontend():
 # --- ENDPOINT DE PRUEBA ADICIONAL ---
 @app.get("/health")
 async def health_check():
-    """Endpoint para verificar que la API está funcionando."""
-    return {
-        "status": "online",
-        "message": "SismosVE API funcionando correctamente"
-    }
+    return {"status": "online", "message": "SismosVE API funcionando correctamente"}
 
 # --- Handler para Vercel ---
 handler = Mangum(app)
