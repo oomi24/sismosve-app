@@ -43,50 +43,38 @@ class SismosService:
             "maxlongitude": -60.0,
         }
 
-    def load_sismos(self) -> Optional[SismosCollection]:
-        """
-        Carga los sismos desde la API del USGS en tiempo real.
-        Si falla, intenta cargar desde el archivo local como fallback.
-        """
-        try:
-            # 🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0
-            self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
-            # Intentar obtener datos de USGS
-            self.logger.info("Consultando API de USGS...")
+def load_sismos(self) -> Optional[SismosCollection]:
+    """
+    Carga los sismos desde la API del USGS en tiempo real.
+    """
+    try:
+        self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
+        self.logger.info("Consultando API de USGS...")
 
-            # Actualizar fecha de inicio para obtener datos recientes
-            self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        # Actualizar fecha de inicio
+        self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
-            response = requests.get(
-                self.usgs_api_url,
-                params=self.usgs_params,
-                timeout=15,
-                headers={"User-Agent": "SismosVE/1.0"}
-            )
-            response.raise_for_status()
+        response = requests.get(
+            self.usgs_api_url,
+            params=self.usgs_params,
+            timeout=15,
+            headers={"User-Agent": "SismosVE/1.0"}
+        )
+        response.raise_for_status()
 
-            data = response.json()
-            sismos_collection = self._transform_usgs_to_sismos(data)
+        data = response.json()
+        sismos_collection = self._transform_usgs_to_sismos(data)
 
-            # Guardar en caché
-            self.cache = sismos_collection
-            self.last_update = datetime.now()
+        self.cache = sismos_collection
+        self.last_update = datetime.now()
 
-            # También guardar en archivo local para fallback
-            self.save_sismos(sismos_collection, create_backup=False)
+        self.logger.info(f"Datos actualizados desde USGS: {len(sismos_collection.features)} sismos")
+        return sismos_collection
 
-            self.logger.info(f"Datos actualizados desde USGS: {len(sismos_collection.features)} sismos")
-            return sismos_collection
-
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error al obtener datos de USGS: {e}")
-            # Fallback: intentar cargar desde archivo local
-            self.logger.info("Usando datos locales como fallback...")
-            return self._load_from_file()
-
-        except Exception as e:
-            self.logger.error(f"Error inesperado: {e}")
-            return self._load_from_file()
+    except Exception as e:
+        self.logger.error(f"Error al obtener datos de USGS: {e}")
+        # ❌ NO USAR FALLBACK - Devolver datos vacíos
+        return SismosCollection(type="sismos", features=[])
 
     def _load_from_file(self) -> Optional[SismosCollection]:
         """Carga datos desde el archivo local (fallback)"""
