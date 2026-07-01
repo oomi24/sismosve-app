@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+print("🚀 INICIANDO api/index.py - VERSIÓN CON USGS 2.0")
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -24,12 +25,12 @@ app = FastAPI(title="SismosVE API")
 async def get_sismos():
     """Obtiene sismos de la API de USGS con magnitud >= 2.0"""
     try:
-        logger.info("🔄 Consultando API de USGS...")
+        print("🔍 Entrando a get_sismos...")
         url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
         params = {
             "format": "geojson",
-            "starttime": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),  # Últimos 7 días
-            "minmagnitude": 2.0,  # ✅ FORZADO A 2.0
+            "starttime": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+            "minmagnitude": 2.0,
             "orderby": "time",
             "limit": 100,
             "minlatitude": 0.0,
@@ -37,13 +38,18 @@ async def get_sismos():
             "minlongitude": -75.0,
             "maxlongitude": -60.0,
         }
-        logger.info(f"📤 Parámetros: {params}")
+        print(f"📤 Parámetros: {params}")
         response = requests.get(url, params=params, timeout=15)
-        logger.info(f"📥 Código de respuesta: {response.status_code}")
+        print(f"📥 Código de respuesta: {response.status_code}")
         data = response.json()
-        logger.info(f"📊 Sismos encontrados: {len(data.get('features', []))}")
+        print(f"📊 Sismos encontrados: {len(data.get('features', []))}")
         
-        # Transformar datos al formato esperado
+        # Si no hay sismos, devolver un error visible
+        if not data.get('features'):
+            print("❌ No se encontraron sismos")
+            return {"type": "sismos", "features": [], "error": "No se encontraron sismos"}
+        
+        # Transformar datos
         features = []
         for feature in data.get('features', []):
             props = feature.get('properties', {})
@@ -76,14 +82,13 @@ async def get_sismos():
                     "long": str(coords[0]) if coords[0] else "0"
                 }
             })
-        logger.info(f"✅ Features transformados: {len(features)}")
+        print(f"✅ Features transformados: {len(features)}")
         return {"type": "sismos", "features": features}
     except Exception as e:
-        logger.error(f"❌ Error en /api/sismos: {e}")
+        print(f"❌ Error en get_sismos: {e}")
         import traceback
         traceback.print_exc()
-        return {"type": "sismos", "features": []}
-
+        return {"type": "sismos", "features": [], "error": str(e)}
 # --- ENDPOINT: ESTADÍSTICAS ---
 @app.get("/api/sismos/stats")
 async def get_stats():
