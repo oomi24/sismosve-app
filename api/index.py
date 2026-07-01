@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from mangum import Mangum
 import requests
+from datetime import datetime, timedelta  # ✅ IMPORTS CORRECTOS
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +47,6 @@ async def get_sismos():
             coords = geom.get('coordinates', [0, 0, 0])
             time_ms = props.get('time', 0)
             if time_ms > 0:
-                from datetime import datetime
                 date_time = datetime.fromtimestamp(time_ms / 1000)
                 fecha_str = date_time.strftime("%d-%m-%Y")
                 hora_str = date_time.strftime("%H:%M")
@@ -74,7 +74,7 @@ async def get_sismos():
             })
         return {"type": "sismos", "features": features}
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error en /api/sismos: {e}")
         return {"type": "sismos", "features": []}
 
 # --- ENDPOINT: ESTADÍSTICAS ---
@@ -104,7 +104,7 @@ async def get_stats():
             "ultima_actualizacion": datetime.now().isoformat()
         }
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error en /api/sismos/stats: {e}")
         return {"total_sismos": 0, "magnitud_minima": 0, "magnitud_maxima": 0, "magnitud_promedio": 0}
 
 # --- SERVIR EL FRONTEND ---
@@ -132,5 +132,4 @@ handler = Mangum(app)
 # --- Para ejecutar localmente ---
 if __name__ == "__main__":
     import uvicorn
-    from datetime import datetime, timedelta
     uvicorn.run(app, host="0.0.0.0", port=8000)
