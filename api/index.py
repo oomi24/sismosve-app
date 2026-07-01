@@ -1,5 +1,8 @@
 import sys
 import os
+print("🚀 INICIANDO API INDEX - VERSIÓN CORREGIDA")
+print(f"📂 Directorio actual: {Path.cwd()}")
+print(f"📂 Directorio del archivo: {Path(__file__).parent}")
 from pathlib import Path
 from fastapi.responses import HTMLResponse
 from fastapi import FastAPI
@@ -96,50 +99,6 @@ async def health_check():
     }
 
 # --- Handler para Vercel ---
-from fastapi.responses import HTMLResponse
-from pathlib import Path
-
-@app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    """Sirve el archivo index.html desde la raíz del proyecto."""
-    posibles_rutas = [
-        Path("/opt/render/project/src/index.html"),  # Render
-        Path("/app/index.html"),
-        Path(__file__).parent.parent / "index.html",
-        Path("index.html"),
-    ]
-    
-    for ruta in posibles_rutas:
-        if ruta.exists():
-            contenido = ruta.read_text(encoding='utf-8')
-            print(f"✅ Sirviendo frontend desde: {ruta}")
-            return contenido
-    
-    print("❌ No se encontró index.html en ninguna ruta")
-    return """
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>SismosVE - Monitoreo Sísmico</title>
-        <style>
-            body { font-family: Arial, sans-serif; padding: 20px; text-align: center; background: #0d0d1a; color: #eee; }
-            h1 { color: #e94560; }
-            a { color: #4CAF50; text-decoration: none; }
-            a:hover { text-decoration: underline; }
-        </style>
-    </head>
-    <body>
-        <h1>🌋 SismosVE</h1>
-        <p>API funcionando correctamente</p>
-        <p><a href="/api/sismos">📊 Ver datos de sismos (JSON)</a></p>
-        <p><a href="/api/sismos/stats">📈 Ver estadísticas</a></p>
-        <p><small>El archivo index.html no se encontró en el despliegue.</small></p>
-    </body>
-    </html>
-    """
-
 handler = Mangum(app)
 
 # --- Para ejecutar localmente ---
