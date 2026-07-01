@@ -456,6 +456,36 @@
             margin: 0 auto 15px;
         }
         
+        /* Animación para notificaciones de nuevos sismos */
+        @keyframes slideDown {
+            0% { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .notification-badge {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: #e94560;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(233, 69, 96, 0.4);
+            animation: pulse 2s infinite;
+        }
+        
         @media (max-width: 600px) {
             .header h1 { font-size: 18px; }
             .stats-container {
@@ -569,6 +599,16 @@
             <button class="close-btn" onclick="toggleHelp()">✕</button>
         </div>
 
+        <!-- Botones de acción rápida -->
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button onclick="descargarApp()" style="flex:1; background:#4CAF50; color:white; border:none; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.3s; font-family:inherit;">
+                📱 Instalar App
+            </button>
+            <button onclick="cargarDatos()" style="flex:1; background:#2196F3; color:white; border:none; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.3s; font-family:inherit;">
+                🔄 Actualizar Ahora
+            </button>
+        </div>
+
         <div class="tab-buttons" id="tabButtons">
             <button class="tab-btn active" onclick="showTab('kit')">🎒 Mochila</button>
             <button class="tab-btn" onclick="showTab('contactos')">📞 Contactos</button>
@@ -580,9 +620,7 @@
         <div id="tab-kit" class="tab-content">
             <h4>🎒 Mochila de Auxilio (72 horas)</h4>
             <div class="help-image">
-                <img src="images/mochila-emergencia.png" 
-                     alt="Mochila de Auxilio" 
-                     onerror="this.src='https://placehold.co/600x300/1a1a2e/ffffff?text=🎒+Mochila+de+Auxilio'">
+                <img src="images/mochila-emergencia.png" alt="Mochila de Auxilio" onerror="this.src='https://placehold.co/600x300/1a1a2e/ffffff?text=🎒+Mochila+de+Auxilio'">
                 <p class="caption">¿Qué debe tener tu mochila de emergencia?</p>
             </div>
             <ul>
@@ -629,9 +667,7 @@
         <div id="tab-alertas" class="tab-content" style="display:none;">
             <h4>🔔 Activar Alertas de Terremoto</h4>
             <div class="help-image">
-                <img src="images/alertas-android.png" 
-                     alt="Activar Alertas en Android" 
-                     onerror="this.src='https://placehold.co/600x300/2196F3/ffffff?text=🔔+Alertas+Android'">
+                <img src="images/alertas-android.png" alt="Activar Alertas en Android" onerror="this.src='https://placehold.co/600x300/2196F3/ffffff?text=🔔+Alertas+Android'">
                 <p class="caption">Configuración paso a paso en tu Android</p>
             </div>
             <p><strong>En Android (Google Play Services):</strong></p>
@@ -650,9 +686,7 @@
         <div id="tab-familiares" class="tab-content" style="display:none;">
             <h4>👨‍👩‍👧 Encuentra a tus Familiares</h4>
             <div class="help-image">
-                <img src="images/busqueda-familiares.png" 
-                     alt="Buscar familiares" 
-                     onerror="this.src='https://placehold.co/600x300/e94560/ffffff?text=👨‍👩‍👧+Busca+a+tu+Familiar'">
+                <img src="images/busqueda-familiares.png" alt="Buscar familiares" onerror="this.src='https://placehold.co/600x300/e94560/ffffff?text=👨‍👩‍👧+Busca+a+tu+Familiar'">
                 <p class="caption">Recursos oficiales para encontrar a tus seres queridos</p>
             </div>
             <div style="background: #f0f7ff; padding: 10px 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin-bottom: 12px;">
@@ -692,9 +726,7 @@
         <div id="tab-educacion" class="tab-content" style="display:none;">
             <h4>📘 Educación Sísmica</h4>
             <div class="help-image">
-                <img src="images/agacharse-cubrirse.png" 
-                     alt="Agacharse, Cubrirse, Agarrarse" 
-                     onerror="this.src='https://placehold.co/600x300/ff9800/ffffff?text=📘+Educación+Sísmica'">
+                <img src="images/agacharse-cubrirse.png" alt="Agacharse, Cubrirse, Agarrarse" onerror="this.src='https://placehold.co/600x300/ff9800/ffffff?text=📘+Educación+Sísmica'">
                 <p class="caption">Los 3 pasos para protegerte durante un sismo</p>
             </div>
             <h5 style="color:#e94560;">🔴 Durante el sismo:</h5>
@@ -756,6 +788,8 @@
         let marcadores = [];
         let datosActuales = [];
         let historialAbierto = false;
+        let sismosAnteriores = [];
+        let ultimaActualizacion = null;
 
         function initMap() {
             mapa = L.map('map', {
@@ -815,9 +849,68 @@
             }
         }
 
-        async function cargarDatos() {
+        function mostrarNotificacionNuevos(cantidad) {
+            const notif = document.createElement('div');
+            notif.style.cssText = `
+                position: fixed;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #e94560;
+                color: white;
+                padding: 12px 24px;
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+                z-index: 999;
+                font-weight: 600;
+                animation: slideDown 0.5s ease;
+                font-size: 14px;
+                text-align: center;
+                max-width: 90%;
+            `;
+            notif.innerHTML = `
+                🌋 ¡${cantidad} nuevo${cantidad > 1 ? 's' : ''} sismo${cantidad > 1 ? 's' : ''} detectado${cantidad > 1 ? 's' : ''}!
+                <span style="display:block;font-size:12px;opacity:0.8;margin-top:4px;">Actualiza el mapa para verlos</span>
+            `;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.style.opacity = '0';
+                notif.style.transition = 'opacity 0.5s';
+                setTimeout(() => notif.remove(), 500);
+            }, 5000);
+            
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+        }
+
+        function verificarNuevosSismos(sismosActuales) {
+            if (sismosAnteriores.length === 0) {
+                sismosAnteriores = sismosActuales;
+                return;
+            }
+            
+            const idsAnteriores = new Set(sismosAnteriores.map(s => 
+                s.properties?.date + s.properties?.time + s.properties?.value
+            ));
+            
+            const nuevos = sismosActuales.filter(s => {
+                const id = s.properties?.date + s.properties?.time + s.properties?.value;
+                return !idsAnteriores.has(id);
+            });
+            
+            if (nuevos.length > 0) {
+                mostrarNotificacionNuevos(nuevos.length);
+                sismosAnteriores = sismosActuales;
+            }
+        }
+
+        async function cargarDatos(silencioso = false) {
             const btn = document.getElementById('refreshBtn');
-            btn.classList.add('loading');
+            if (!silencioso) {
+                btn.classList.add('loading');
+            }
 
             try {
                 const resSismos = await fetch('/api/sismos');
@@ -825,20 +918,36 @@
                 const resStats = await fetch('/api/sismos/stats');
                 const dataStats = await resStats.json();
 
-                datosActuales = dataSismos.features || dataSismos.sismos || [];
+                const nuevosDatos = dataSismos.features || dataSismos.sismos || [];
+                
+                if (!silencioso) {
+                    verificarNuevosSismos(nuevosDatos);
+                }
+                
+                datosActuales = nuevosDatos;
+                ultimaActualizacion = new Date();
+                
                 actualizarStats(dataStats);
                 actualizarMapa(datosActuales);
                 actualizarHistorial(datosActuales);
                 actualizarHora(dataStats.ultima_actualizacion);
+                
+                if (!silencioso) {
+                    sismosAnteriores = datosActuales;
+                }
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('historialList').innerHTML = `
-                    <div style="text-align:center;padding:15px;color:#e94560;font-size:13px;">
-                        ❌ Error: ${error.message}
-                    </div>
-                `;
+                if (!silencioso) {
+                    document.getElementById('historialList').innerHTML = `
+                        <div style="text-align:center;padding:15px;color:#e94560;font-size:13px;">
+                            ❌ Error: ${error.message}
+                        </div>
+                    `;
+                }
             } finally {
-                btn.classList.remove('loading');
+                if (!silencioso) {
+                    btn.classList.remove('loading');
+                }
             }
         }
 
@@ -979,11 +1088,63 @@
             if (index !== -1 && buttons[index]) buttons[index].classList.add('active');
         }
 
+        function descargarApp() {
+            const isAndroid = /android/i.test(navigator.userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            if (window.navigator && window.navigator.standalone) {
+                alert('✅ SismosVE ya está instalada en tu dispositivo.');
+                return;
+            }
+            
+            let mensaje = '📱 Instalar SismosVE en tu dispositivo:\n\n';
+            
+            if (isAndroid) {
+                mensaje += '1. Abre el menú del navegador (⋮)\n';
+                mensaje += '2. Selecciona "Agregar a pantalla de inicio"\n';
+                mensaje += '3. Confirma la instalación\n\n';
+                mensaje += '✅ La app se actualizará automáticamente cada 30 min.';
+            } else if (isIOS) {
+                mensaje += '1. Toca el botón Compartir (⬆️)\n';
+                mensaje += '2. Selecciona "Agregar a pantalla de inicio"\n';
+                mensaje += '3. Confirma la instalación\n\n';
+                mensaje += '✅ La app se actualizará automáticamente cada 30 min.';
+            } else {
+                mensaje += '1. Abre el menú del navegador\n';
+                mensaje += '2. Busca "Instalar aplicación" o "Agregar a pantalla de inicio"\n';
+                mensaje += '3. Sigue las instrucciones\n\n';
+                mensaje += '✅ La app se actualizará automáticamente cada 30 min.';
+            }
+            
+            alert(mensaje);
+        }
+
+        function configurarActualizacionAutomatica() {
+            setInterval(() => {
+                console.log('🔄 Actualización automática en segundo plano...');
+                cargarDatos(true);
+            }, 1800000);
+            
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    const ahora = new Date();
+                    if (ultimaActualizacion && (ahora - ultimaActualizacion) > 600000) {
+                        console.log('🔄 Actualizando al volver a la pestaña...');
+                        cargarDatos(true);
+                    }
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
             cargarDatos();
             document.getElementById('helpPanel').style.display = 'none';
-            setInterval(cargarDatos, 300000);
+            configurarActualizacionAutomatica();
+            
+            if (window.navigator && window.navigator.standalone) {
+                console.log('✅ SismosVE está instalada como app');
+            }
         });
     </script>
 </body>
