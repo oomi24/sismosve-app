@@ -32,16 +32,20 @@ class SismosService:
         # Configuración de la API de USGS
         self.usgs_api_url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 
-        # Leer configuración desde variables de entorno (o usar valores por defecto)
+        # 🔥 LEYENDO VARIABLES DE ENTORNO (VALORES POR DEFECTO: 2.0 y 150)
         try:
             self.min_magnitude = float(os.getenv("MIN_MAGNITUDE", "2.0"))
-        except:
+        except (ValueError, TypeError):
             self.min_magnitude = 2.0
+            self.logger.warning("MIN_MAGNITUDE no es un número válido, usando 2.0")
 
         try:
             self.max_results = int(os.getenv("MAX_RESULTS", "150"))
-        except:
+        except (ValueError, TypeError):
             self.max_results = 150
+            self.logger.warning("MAX_RESULTS no es un número válido, usando 150")
+
+        self.logger.info(f"🚀 CONFIGURACIÓN ACTIVA: Magnitud mínima = {self.min_magnitude}, Límite = {self.max_results}")
 
         # Parámetros de la API
         self.usgs_params = {
@@ -55,8 +59,6 @@ class SismosService:
             "minlongitude": -75.0,
             "maxlongitude": -60.0,
         }
-
-        self.logger.info(f"🚀 Configuración: Magnitud mínima = {self.min_magnitude}, Límite = {self.max_results}")
 
     def load_sismos(self) -> Optional[SismosCollection]:
         """
@@ -296,4 +298,3 @@ class SismosService:
             return datetime(int(year), int(month), int(day), int(hours), int(minutes))
         except:
             return datetime.min
-# Forzar despliegue con variables de entorno
