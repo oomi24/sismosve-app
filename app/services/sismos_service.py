@@ -34,47 +34,55 @@ class SismosService:
         self.usgs_params = {
             "format": "geojson",
             "starttime": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
-            "minmagnitude": 2.0,  # ✅ CAMBIADO DE 4.0 A 2.0
+            "minmagnitude": 2.0,
             "orderby": "time",
-            "limit": 150,  # ✅ AUMENTADO DE 50 A 150
+            "limit": 150,
             "minlatitude": 0.0,
             "maxlatitude": 15.0,
             "minlongitude": -75.0,
             "maxlongitude": -60.0,
         }
 
-def load_sismos(self) -> Optional[SismosCollection]:
-    """
-    Carga los sismos desde la API del USGS en tiempo real.
-    """
-    try:
-        self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
-        self.logger.info("Consultando API de USGS...")
+    def load_sismos(self) -> Optional[SismosCollection]:
+        """
+        Carga los sismos desde la API del USGS en tiempo real.
+        Si falla, intenta cargar desde el archivo local como fallback.
+        """
+        try:
+            self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
+            self.logger.info("Consultando API de USGS...")
 
-        # Actualizar fecha de inicio
-        self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+            # Actualizar fecha de inicio
+            self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
-        response = requests.get(
-            self.usgs_api_url,
-            params=self.usgs_params,
-            timeout=15,
-            headers={"User-Agent": "SismosVE/1.0"}
-        )
-        response.raise_for_status()
+            response = requests.get(
+                self.usgs_api_url,
+                params=self.usgs_params,
+                timeout=30,
+                headers={"User-Agent": "SismosVE/1.0"}
+            )
+            response.raise_for_status()
 
-        data = response.json()
-        sismos_collection = self._transform_usgs_to_sismos(data)
+            data = response.json()
+            sismos_collection = self._transform_usgs_to_sismos(data)
 
-        self.cache = sismos_collection
-        self.last_update = datetime.now()
+            self.cache = sismos_collection
+            self.last_update = datetime.now()
 
-        self.logger.info(f"Datos actualizados desde USGS: {len(sismos_collection.features)} sismos")
-        return sismos_collection
+            # Guardar en archivo local para futuro fallback
+            self.save_sismos(sismos_collection, create_backup=False)
 
-    except Exception as e:
-        self.logger.error(f"Error al obtener datos de USGS: {e}")
-        # ❌ NO USAR FALLBACK - Devolver datos vacíos
-        return SismosCollection(type="sismos", features=[])
+            self.logger.info(f"Datos actualizados desde USGS: {len(sismos_collection.features)} sismos")
+            return sismos_collection
+
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error al obtener datos de USGS: {e}")
+            self.logger.info("Usando datos locales como fallback...")
+            return self._load_from_file()
+
+        except Exception as e:
+            self.logger.error(f"Error inesperado: {e}")
+            return self._load_from_file()
 
     def _load_from_file(self) -> Optional[SismosCollection]:
         """Carga datos desde el archivo local (fallback)"""
