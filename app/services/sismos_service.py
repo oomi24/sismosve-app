@@ -29,15 +29,15 @@ class SismosService:
         self.cache = None
         self.last_update = None
         
-        # Configuración de la API de USGS
+        # Configuración de la API de USGS - FILTRO DE MAGNITUD 2.0
         self.usgs_api_url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
         self.usgs_params = {
             "format": "geojson",
             "starttime": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
-            "minmagnitude": 4.0,  # Sismos de magnitud significativa
+            "minmagnitude": 2.0,  # ✅ CAMBIADO DE 4.0 A 2.0
             "orderby": "time",
-            "limit": 50,
-            "minlatitude": 0.0,    # Límites para Venezuela
+            "limit": 100,  # ✅ AUMENTADO DE 50 A 100
+            "minlatitude": 0.0,
             "maxlatitude": 15.0,
             "minlongitude": -75.0,
             "maxlongitude": -60.0,
@@ -92,13 +92,11 @@ class SismosService:
         try:
             if not os.path.exists(self.data_file):
                 self.logger.warning(f"Archivo {self.data_file} no existe")
-                # Crear datos vacíos
                 return SismosCollection(type="sismos", features=[])
             
             with open(self.data_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 
-            # Si el archivo está vacío o no tiene features, devolver colección vacía
             if not data or not data.get("features"):
                 return SismosCollection(type="sismos", features=[])
                 
@@ -167,11 +165,9 @@ class SismosService:
     def save_sismos(self, sismos: SismosCollection, create_backup: bool = True) -> bool:
         """Guarda los sismos en el archivo JSON"""
         try:
-            # Crear backup si es necesario
             if create_backup and os.path.exists(self.data_file):
                 self._create_backup()
 
-            # Guardar datos
             with open(self.data_file, "w", encoding="utf-8") as f:
                 json.dump(sismos.dict(), f, indent=2, ensure_ascii=False)
 
@@ -194,7 +190,6 @@ class SismosService:
                 ultima_actualizacion=datetime.now(),
             )
 
-        # Obtener magnitudes
         magnitudes = []
         for sismo in sismos.features:
             try:
@@ -206,7 +201,6 @@ class SismosService:
         if not magnitudes:
             magnitudes = [0.0]
 
-        # Obtener último sismo
         ultimo_sismo = self._get_latest_earthquake(sismos.features)
 
         return SismosStats(
@@ -236,7 +230,6 @@ class SismosService:
         self, sismos: SismosCollection, limit: int = 10
     ) -> List[Sismo]:
         """Obtiene los sismos más recientes"""
-        # Ordenar por fecha/hora (más reciente primero)
         sorted_sismos = sorted(
             sismos.features,
             key=lambda s: self._parse_datetime(s.properties.date, s.properties.time),
@@ -252,8 +245,6 @@ class SismosService:
 
             shutil.copy2(self.data_file, backup_name)
             self.logger.info(f"Backup creado: {backup_name}")
-
-            # Limpiar backups antiguos
             self._cleanup_old_backups()
 
         except Exception as e:
