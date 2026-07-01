@@ -44,17 +44,19 @@ class SismosService:
         }
 
     def load_sismos(self) -> Optional[SismosCollection]:
-        """
-        Carga los sismos desde la API del USGS en tiempo real.
-        Si falla, intenta cargar desde el archivo local como fallback.
-        """
-        try:
-            # Intentar obtener datos de USGS
-            self.logger.info("Consultando API de USGS...")
-            
-            # Actualizar fecha de inicio para obtener datos recientes
-            self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-            
+def load_sismos(self) -> Optional[SismosCollection]:
+    """
+    Carga los sismos desde la API del USGS en tiempo real.
+    Si falla, intenta cargar desde el archivo local como fallback.
+    """
+    try:
+        # 🔥 FORZANDO RECONSTRUCCIÓN - VERSIÓN 2.0
+        self.logger.info("🔥 CARGANDO SISMOS CON MAGNITUD MÍNIMA 2.0")
+        # Intentar obtener datos de USGS
+        self.logger.info("Consultando API de USGS...")
+        
+        # Actualizar fecha de inicio para obtener datos recientes
+        self.usgs_params["starttime"] = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")            
             response = requests.get(
                 self.usgs_api_url, 
                 params=self.usgs_params, 
