@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from mangum import Mangum
 import requests
-from datetime import datetime, timedelta  # ✅ IMPORTS CORRECTOS
+from datetime import datetime, timedelta
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -24,10 +24,11 @@ app = FastAPI(title="SismosVE API")
 async def get_sismos():
     """Obtiene sismos de la API de USGS con magnitud >= 2.0"""
     try:
+        logger.info("🔄 Consultando API de USGS...")
         url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
         params = {
             "format": "geojson",
-            "starttime": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
+            "starttime": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),  # Últimos 7 días
             "minmagnitude": 2.0,  # ✅ FORZADO A 2.0
             "orderby": "time",
             "limit": 100,
@@ -36,8 +37,11 @@ async def get_sismos():
             "minlongitude": -75.0,
             "maxlongitude": -60.0,
         }
+        logger.info(f"📤 Parámetros: {params}")
         response = requests.get(url, params=params, timeout=15)
+        logger.info(f"📥 Código de respuesta: {response.status_code}")
         data = response.json()
+        logger.info(f"📊 Sismos encontrados: {len(data.get('features', []))}")
         
         # Transformar datos al formato esperado
         features = []
@@ -72,9 +76,12 @@ async def get_sismos():
                     "long": str(coords[0]) if coords[0] else "0"
                 }
             })
+        logger.info(f"✅ Features transformados: {len(features)}")
         return {"type": "sismos", "features": features}
     except Exception as e:
-        logger.error(f"Error en /api/sismos: {e}")
+        logger.error(f"❌ Error en /api/sismos: {e}")
+        import traceback
+        traceback.print_exc()
         return {"type": "sismos", "features": []}
 
 # --- ENDPOINT: ESTADÍSTICAS ---
@@ -82,9 +89,11 @@ async def get_sismos():
 async def get_stats():
     """Obtiene estadísticas de los sismos"""
     try:
+        logger.info("📊 Calculando estadísticas...")
         sismos_data = await get_sismos()
         features = sismos_data.get('features', [])
         if not features:
+            logger.warning("⚠️ No hay sismos para calcular estadísticas")
             return {"total_sismos": 0, "magnitud_minima": 0, "magnitud_maxima": 0, "magnitud_promedio": 0}
         magnitudes = []
         for f in features:
@@ -104,7 +113,9 @@ async def get_stats():
             "ultima_actualizacion": datetime.now().isoformat()
         }
     except Exception as e:
-        logger.error(f"Error en /api/sismos/stats: {e}")
+        logger.error(f"❌ Error en /api/sismos/stats: {e}")
+        import traceback
+        traceback.print_exc()
         return {"total_sismos": 0, "magnitud_minima": 0, "magnitud_maxima": 0, "magnitud_promedio": 0}
 
 # --- SERVIR EL FRONTEND ---
